@@ -111,14 +111,6 @@ public class Movie {
         this.isCurrentlyShowing = currentlyShowing;
     }
       
-    // Utility methods for backend
-    public String[] getShowtimeArray() {
-        if (showtimes == null || showtimes.trim().isEmpty()) {
-            return new String[0];
-        }
-        return showtimes.split(",");
-    }
-    
     public String toJson() {
         Gson gson = new Gson();
         return gson.toJson(this);
