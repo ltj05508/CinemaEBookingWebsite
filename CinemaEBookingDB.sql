@@ -23,11 +23,17 @@ VALUES
 ('Inception', 'Sci-Fi', 'PG-13', 'A thief who steals corporate secrets through dream-sharing technology is given a chance to erase his past crimes.', 'inception.jpg', 'https://www.youtube.com/watch?v=YoHD9XEInc0&pp=ygURaW5jZXB0aW9uIHRyYWlsZXI%3D'),
 ('The Matrix', 'Sci-Fi', 'R', 'A computer hacker learns about the true nature of reality and his role in the war against its controllers.', 'matrix.jpg', 'https://www.youtube.com/watch?v=vKQi3bBA1y8&pp=ygUObWF0cml4IHRyYWlsZXI%3D'),
 ('The Godfather', 'Crime', 'R', 'The aging patriarch of an organized crime dynasty transfers control of his empire to his reluctant son.', 'godfather.jpg', 'https://www.youtube.com/watch?v=sY1S34973zA&pp=ygURZ29kZmF0aGVyIHRyYWlsZXI%3D');
+('Interstellar', 'Sci-Fi', 'PG-13', 'A team of explorers travels through a wormhole in space in an attempt to ensure humanity’s survival.', 'interstellar.jpg', 'https://www.youtube.com/watch?v=zSWdZVtXT7E'),
+('The Dark Knight', 'Action', 'PG-13', 'Batman sets out to dismantle organized crime in Gotham but finds himself facing the Joker, a criminal mastermind bent on chaos.', 'dark_knight.jpg', 'https://www.youtube.com/watch?v=EXeTwQWrcwY&pp=ygUXdGhlIGRhcmsga25pZ2h0IHRyYWlsZXI%3D'),
+('Pulp Fiction', 'Crime', 'R', 'The lives of two mob hitmen, a boxer, a gangster’s wife, and a pair of diner bandits intertwine in four tales of violence and redemption.', 'pulp_fiction.jpg', 'https://www.youtube.com/watch?v=s7EdQ4FqbhY&pp=ygUUcHVscCBmaWN0aW9uIHRyYWlsZXLSBwkJ6wkBhyohjO8%3D');
 
 INSERT INTO Showtimes (movie_id, showtime) VALUES
 (1, '14:00:00'), (1, '17:00:00'), (1, '20:00:00'),
 (2, '13:30:00'), (2, '16:30:00'), (2, '19:30:00'),
 (3, '15:00:00'), (3, '18:00:00'), (3, '21:00:00');
+(4, '16:30:00'), (4, '19:30:00'), (4, '22:30:00');
+(5, '15:30:00'), (5, '18:30:00'), (5, '21:30:00');
+(6, '12:30:00'), (6, '15:30:00'), (6, '18:30:00');
 
 -- Useful Queries (for backend/frontend)
 -- Get all movies
