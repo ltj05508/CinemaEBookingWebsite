@@ -1,9 +1,15 @@
 import { MOVIES } from "@/lib/data";
 import Trailer from "@/components/Trailer";
 import { notFound } from "next/navigation";
+import ShowtimeChips from "@/components/ShowtimeChips";
 
-export default function MovieDetailPage({ params }: { params: { id: string } }) {
-  const movie = MOVIES.find((m) => m.id === params.id);
+export default async function MovieDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params; // ✅ unwrap promised params
+  const movie = MOVIES.find((m) => m.id === id);
   if (!movie) return notFound();
 
   return (
@@ -27,19 +33,8 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
 
         <p className="opacity-90">{movie.description}</p>
 
-        <div className="space-y-2">
-          <h2 className="font-semibold">Showtimes</h2>
-          <div className="flex flex-wrap gap-2">
-            {movie.showtimes.map((t) => (
-              <span
-                key={t}
-                className="text-sm rounded-lg border px-3 py-1 bg-white"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* Showtimes (client component handles clicks) */}
+        <ShowtimeChips movieId={movie.id} showtimes={movie.showtimes} />
 
         <div className="space-y-2">
           <h2 className="font-semibold">Trailer</h2>
@@ -51,7 +46,9 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
         <div className="rounded-2xl border p-4">
           <h3 className="font-medium mb-2">Quick Info</h3>
           <ul className="text-sm space-y-1">
-            <li>Status: {movie.status === "RUNNING" ? "Now Showing" : "Coming Soon"}</li>
+            <li>
+              Status: {movie.status === "RUNNING" ? "Now Showing" : "Coming Soon"}
+            </li>
             {movie.durationMins && <li>Duration: {movie.durationMins} mins</li>}
             {movie.rating && <li>Rating: {movie.rating}</li>}
           </ul>
@@ -60,3 +57,4 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
     </div>
   );
 }
+
