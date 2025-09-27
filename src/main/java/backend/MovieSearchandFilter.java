@@ -1,17 +1,21 @@
 package backend;
 
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+
 /**
  * 
  * Searches for movies by title and filters by genre
  */
+
 public class MovieSearchandFilter {
     private List<Movie> movies;
     private Gson gson;
+    public static Connection conn;
     
     public MovieSearchandFilter() {
         this.movies = new ArrayList<>();
@@ -28,6 +32,8 @@ public class MovieSearchandFilter {
             this.movies = new ArrayList<>();
         }
         this.gson = new GsonBuilder().create();
+        setUpConnection("127.0.0.1", "CinemaEBooking", "root", "Booboorex");
+        System.out.println("MovieSearchAndFilter successfully created!");
     }
     
     /**
@@ -46,6 +52,22 @@ public class MovieSearchandFilter {
      * Get all movies
      */
     public List<Movie> getAllMovies() {
+        try {
+            Statement state = conn.createStatement();
+            ResultSet resultSet = state.executeQuery("select * from Movies"); //cinema_eBooking_system
+            System.out.println("Movies in Database");
+
+            while(resultSet.next()) {
+                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
+                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
+
+                movies.add(newMovie);
+            }
+        } catch(Exception e) {
+            System.out.println("Problem in getAllMovies!");
+            e.printStackTrace();
+        }
         return new ArrayList<>(movies);
     }
     
@@ -53,7 +75,7 @@ public class MovieSearchandFilter {
      * Return all movies as JSON
      */
     public String getAllMoviesJson() {
-        return gson.toJson(movies);
+        return gson.toJson(getAllMovies());
     }
     
     /**
@@ -65,9 +87,32 @@ public class MovieSearchandFilter {
         }
         
         String searchTerm = title.toLowerCase().trim();
+        try {
+            Statement state = conn.createStatement();
+            ResultSet resultSet = state.executeQuery("select * from Movies where title like '%" +searchTerm+ "%'"); //cinema_eBooking_system
+            System.out.println("Movies in Database Searched by " +searchTerm);
+
+
+
+            while(resultSet.next()) {
+                //ResultSet showtimeSet = state.executeQuery("select * from Showtimes where movie_id = " +resultSet.getInt("movie_id"));
+                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
+                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
+
+                movies.add(newMovie);
+            }
+
+        } catch(Exception e) {
+            System.out.println("Exception in searchByTitle!");
+            e.printStackTrace();
+        }
+        return movies;
+        /*
         return movies.stream()
                 .filter(movie -> movie.getTitle().toLowerCase().contains(searchTerm))
                 .collect(Collectors.toList());
+         */
     }
     
     /**
@@ -87,9 +132,32 @@ public class MovieSearchandFilter {
         }
         
         String filterGenre = genre.toLowerCase().trim();
+
+        try {
+            Statement state = conn.createStatement();
+            ResultSet resultSet = state.executeQuery("select * from Movies where genre like '" +filterGenre+ "'"); //cinema_eBooking_system
+            System.out.println("Movies in Database with Genre:  " +filterGenre);
+
+            while(resultSet.next()) {
+                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
+                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
+
+                movies.add(newMovie);
+            }
+
+        } catch(Exception e) {
+            System.out.println("Exception in searchByTitle!");
+            e.printStackTrace();
+        }
+
+        return movies;
+        /*
         return movies.stream()
                 .filter(movie -> movie.getGenre().toLowerCase().equals(filterGenre))
                 .collect(Collectors.toList());
+
+         */
     }
     
     /**
@@ -99,5 +167,17 @@ public class MovieSearchandFilter {
         List<Movie> results = filterByGenre(genre);
         return gson.toJson(results);
     }
-    
+
+
+    public static void setUpConnection(String hostURL, String databaseName, String username, String password) {
+
+        try {                                     //"jdbc:mysql://151.101.1.69:3306/databasename?useUnicode=true&characterEncoding=utf8"
+            conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
+            //"jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?useUnicode=true&characterEncoding=utf8");
+        }
+        catch(Exception e) {
+            System.out.println("Error in setUpConnection!");
+            e.printStackTrace();
+        }
+    }
 }
