@@ -178,7 +178,7 @@ public class MovieSearchandFilter {
     }
 
 
-    public static void setUpConnection(String hostURL, String databaseName, String username, String password) {
+    public void setUpConnection(String hostURL, String databaseName, String username, String password) {
 
         try {                                     //"jdbc:mysql://151.101.1.69:3306/databasename?useUnicode=true&characterEncoding=utf8"
             conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
@@ -187,6 +187,16 @@ public class MovieSearchandFilter {
         catch(Exception e) {
             System.out.println("Error in setUpConnection!");
             e.printStackTrace();
+        }
+    }
+
+    public void closeConnection() {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch(Exception e) {
+                System.out.println("Did not close conn :'(");
+            }
         }
     }
 }
