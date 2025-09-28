@@ -32,8 +32,9 @@ public class MovieSearchandFilter {
             this.movies = new ArrayList<>();
         }
         this.gson = new GsonBuilder().create();
-        setUpConnection("127.0.0.1", "CinemaEBooking", "root", "Booboorex");
+        setUpConnection("127.0.0.1", "cinema_eBooking_system", "root", "Booboorex"); //replace with username/password of your server
         System.out.println("MovieSearchAndFilter successfully created!");
+        //Make sure to close connection once query is finished
     }
     
     /**
@@ -55,14 +56,22 @@ public class MovieSearchandFilter {
         try {
             Statement state = conn.createStatement();
             ResultSet resultSet = state.executeQuery("select * from Movies"); //cinema_eBooking_system
+            //ResultSet showtimeSet = state.executeQuery("select * from Showtimes");
             System.out.println("Movies in Database");
+
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.println("Column " + i + ": " + metaData.getColumnName(i));
+            }
 
             while(resultSet.next()) {
                 Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
                         resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
 
                 movies.add(newMovie);
+                //showtimeSet.next();
             }
         } catch(Exception e) {
             System.out.println("Problem in getAllMovies!");
@@ -97,7 +106,7 @@ public class MovieSearchandFilter {
             while(resultSet.next()) {
                 //ResultSet showtimeSet = state.executeQuery("select * from Showtimes where movie_id = " +resultSet.getInt("movie_id"));
                 Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
                         resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
 
                 movies.add(newMovie);
@@ -140,7 +149,7 @@ public class MovieSearchandFilter {
 
             while(resultSet.next()) {
                 Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), "placeholder", resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
                         resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
 
                 movies.add(newMovie);

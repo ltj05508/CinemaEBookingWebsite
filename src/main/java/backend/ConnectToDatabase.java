@@ -1,16 +1,25 @@
+package backend;
+
 import java.sql.*;
+import java.util.List;
+import java.util.ArrayList;
+
 public class ConnectToDatabase {
     public static Connection conn = null;
+    public static List<Movie> movies;
     public static void main(String[] args) {
+        movies = new ArrayList<>();
         String hostURL = "127.0.0.1";
-        String databaseName = "CinemaEBooking";
+        String databaseName = "cinema_eBooking_system";
         String username = "root";
         String password = "Booboorex"; //replace with your own password
 
         setUpConnection(hostURL, databaseName, username, password);
 
-        readMovies();
-        String[] movieData = retrieveMovieData(1);
+        //readMovies();
+        //String[] movieData = retrieveMovieData(1);
+
+        getAllMovies();
 
         if (conn != null) {
             try {
@@ -19,6 +28,34 @@ public class ConnectToDatabase {
                 System.out.println("Did not close conn :'(");
             }
         }
+    }
+
+    public static List<Movie> getAllMovies() {
+        try {
+            Statement state = conn.createStatement();
+            ResultSet resultSet = state.executeQuery("select * from Movies"); //cinema_eBooking_system
+            //ResultSet showtimeSet = state.executeQuery("select * from Showtimes");
+            System.out.println("Movies in Database");
+
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.println("Column " + i + ": " + metaData.getColumnName(i));
+            }
+
+            while(resultSet.next()) {
+                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
+                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
+                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
+
+                movies.add(newMovie);
+                //showtimeSet.next();
+            }
+        } catch(Exception e) {
+            System.out.println("Problem in getAllMovies!");
+            e.printStackTrace();
+        }
+        return new ArrayList<>(movies);
     }
 
     /*
