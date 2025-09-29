@@ -2,10 +2,11 @@
 "use client";
 
 import * as React from "react"; // ⬅️ add this
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
-import { MOVIES } from "@/lib/data";
+import { getMovieById } from "@/lib/data";
 import { notFound } from "next/navigation";
+import type { Movie } from "@/types/cinema";
 
 type PageProps = {
   // ⬇️ params is now a Promise in Next 15
@@ -22,12 +23,30 @@ export default function BookingPage({ params }: PageProps) {
   // ⬇️ unwrap promised params on the client
   const { id, showtime: rawShowtime } = React.use(params);
   const showtime = decodeURIComponent(rawShowtime);
+  
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<SeatId>>(new Set());
 
-  const movie = MOVIES.find((m) => m.id === id);
-  if (!movie) return notFound();
+  useEffect(() => {
+    async function fetchMovie() {
+      try {
+        const movieData = await getMovieById(id);
+        setMovie(movieData);
+      } catch (error) {
+        console.error('Error fetching movie:', error);
+        setMovie(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMovie();
+  }, [id]);
 
-  // ... rest unchanged ...
+  // Always call useMemo, even if movie is null (to maintain hook order)
   const reservedSeats = useMemo(() => {
+    if (!movie) return new Set<SeatId>(); // Return empty set if no movie
+    
     const base = (movie.id + "|" + showtime)
       .split("")
       .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -45,9 +64,13 @@ export default function BookingPage({ params }: PageProps) {
       if (!picks.includes(seat)) picks.push(seat);
     }
     return new Set(picks);
-  }, [movie.id, showtime]);
+  }, [movie?.id, showtime]);
 
-  const [selected, setSelected] = useState<Set<SeatId>>(new Set());
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
+  
+  if (!movie) return notFound();
 
   const toggleSeat = (seat: SeatId) => {
     if (reservedSeats.has(seat)) return;
