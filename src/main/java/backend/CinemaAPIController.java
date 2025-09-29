@@ -2,6 +2,7 @@ package backend;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import java.sql.SQLException;
 import java.util.*;
 
 @RestController
@@ -10,16 +11,9 @@ import java.util.*;
 public class CinemaAPIController {
     
     private MovieSearchandFilter movieService;
-    private List<Movie> movies;
     
     public CinemaAPIController() {
-        initializeMovies();
-        this.movieService = new MovieSearchandFilter(movies);
-    }
-    
-    private void initializeMovies() {
-        movies = new ArrayList<>();
-        
+        this.movieService = new MovieSearchandFilter();
     }
     
     @GetMapping("/movies")
@@ -28,7 +22,7 @@ public class CinemaAPIController {
             String moviesJson = movieService.getAllMoviesJson();
             return ResponseEntity.ok(moviesJson);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movies\"}");
+            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movies: " + e.getMessage() + "\"}");
         }
     }
     
@@ -38,7 +32,7 @@ public class CinemaAPIController {
             String searchResults = movieService.searchByTitleJson(title);
             return ResponseEntity.ok(searchResults);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("{\"error\":\"Search failed\"}");
+            return ResponseEntity.internalServerError().body("{\"error\":\"Search failed: " + e.getMessage() + "\"}");
         }
     }
     
@@ -48,18 +42,14 @@ public class CinemaAPIController {
             String filteredResults = movieService.filterByGenreJson(genre);
             return ResponseEntity.ok(filteredResults);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("{\"error\":\"Filter failed\"}");
+            return ResponseEntity.internalServerError().body("{\"error\":\"Filter failed: " + e.getMessage() + "\"}");
         }
     }
     
     @GetMapping("/genres")
     public ResponseEntity<String> getGenres() {
         try {
-            Set<String> genres = new HashSet<>();
-            for (Movie movie : movies) {
-                genres.add(movie.getGenre());
-            }
-            
+            Set<String> genres = movieService.getAllGenres();
             List<String> genreList = new ArrayList<>(genres);
             Collections.sort(genreList);
             
@@ -74,25 +64,22 @@ public class CinemaAPIController {
             json.append("]");
             
             return ResponseEntity.ok(json.toString());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve genres\"}");
+        } catch (SQLException e) {
+            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve genres: " + e.getMessage() + "\"}");
         }
     }
     
     @GetMapping("/movies/{id}")
     public ResponseEntity<String> getMovieById(@PathVariable int id) {
         try {
-            Optional<Movie> movie = movies.stream()
-                .filter(m -> m.getMovieId() == id)
-                .findFirst();
-                
-            if (movie.isPresent()) {
-                return ResponseEntity.ok(movie.get().toJson());
+            Movie movie = movieService.getMovieById(id);
+            if (movie != null) {
+                return ResponseEntity.ok(movie.toJson());
             } else {
                 return ResponseEntity.notFound().build();
             }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movie\"}");
+        } catch (SQLException e) {
+            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movie: " + e.getMessage() + "\"}");
         }
     }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { ALL_GENRES } from "@/lib/data";
+import { getAllGenres } from "@/lib/data";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function SearchFilterBar() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export default function SearchFilterBar() {
 
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [genre, setGenre] = useState(sp.get("genre") ?? "ALL");
+  const [genres, setGenres] = useState<string[]>(["ALL"]);
 
   // keep inputs in sync if user navigates back/forward
   useEffect(() => {
@@ -18,7 +19,21 @@ export default function SearchFilterBar() {
     setGenre(sp.get("genre") ?? "ALL");
   }, [sp]);
 
-  const genres = useMemo(() => ["ALL", ...ALL_GENRES], []);
+  // Load genres from backend
+  useEffect(() => {
+    async function fetchGenres() {
+      try {
+        const backendGenres = await getAllGenres();
+        setGenres(["ALL", ...backendGenres]);
+      } catch (error) {
+        console.error('Error loading genres:', error);
+        // Keep default genres if API fails
+        setGenres(["ALL", "Action", "Comedy", "Crime", "Drama", "Sci-Fi"]);
+      }
+    }
+    
+    fetchGenres();
+  }, []);
 
   const apply = () => {
     const params = new URLSearchParams(sp.toString());
@@ -46,7 +61,7 @@ export default function SearchFilterBar() {
           onChange={(e) => setGenre(e.target.value)}
           className="rounded-xl border px-3 py-2"
         >
-          {genres.map((g) => (
+          {genres.map((g: string) => (
             <option key={g} value={g}>
               {g}
             </option>

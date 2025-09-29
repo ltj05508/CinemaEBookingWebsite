@@ -1,4 +1,4 @@
-import { MOVIES } from "@/lib/data";
+import { getMovieById } from "@/lib/data";
 import Trailer from "@/components/Trailer";
 import { notFound } from "next/navigation";
 import ShowtimeChips from "@/components/ShowtimeChips";
@@ -9,7 +9,7 @@ export default async function MovieDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params; // ✅ unwrap promised params
-  const movie = MOVIES.find((m) => m.id === id);
+  const movie = await getMovieById(id);
   if (!movie) return notFound();
 
   return (

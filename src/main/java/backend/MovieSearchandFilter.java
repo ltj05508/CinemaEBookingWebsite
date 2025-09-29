@@ -2,201 +2,272 @@ package backend;
 
 import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-
 /**
- * 
- * Searches for movies by title and filters by genre
+ * Handles movie database operations including search and filter functionality
  */
-
 public class MovieSearchandFilter {
-    private List<Movie> movies;
+    private static final String URL = "jdbc:mysql://localhost:3306/cinema_eBooking_system";
+    private static final String USERNAME = "root";
+    private static final String PASSWORD = "Booboorex";
+    
     private Gson gson;
-    public static Connection conn;
     
     public MovieSearchandFilter() {
-        this.movies = new ArrayList<>();
         this.gson = new GsonBuilder().create();
     }
     
-    /**
-     * Constructor 
-     */
-    public MovieSearchandFilter(List<Movie> movieList) {
-        if(this.movies != null) {
-            this.movies = new ArrayList<>(movieList);
-        } else {
-            this.movies = new ArrayList<>();
-        }
-        this.gson = new GsonBuilder().create();
-        setUpConnection("127.0.0.1", "cinema_eBooking_system", "root", "Booboorex"); //replace with username/password of your server
-        System.out.println("MovieSearchAndFilter successfully created!");
-        //Make sure to close connection once query is finished
-    }
-    
-    /**
-     * Set the movie list for search and filter operations
-     */
-    public void setMovies(List<Movie> movieList) {
-        if(this.movies != null) {
-            this.movies = new ArrayList<>(movieList);
-        } else {
-            this.movies = new ArrayList<>();
-        }
-    }
-    
-    
-    /**
-     * Get all movies
-     */
-    public List<Movie> getAllMovies() {
+    // Helper method to get database connection
+    private Connection getConnection() throws SQLException {
         try {
-            Statement state = conn.createStatement();
-            ResultSet resultSet = state.executeQuery("select * from Movies"); //cinema_eBooking_system
-            //ResultSet showtimeSet = state.executeQuery("select * from Showtimes");
-            System.out.println("Movies in Database");
-
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.println("Column " + i + ": " + metaData.getColumnName(i));
-            }
-
-            while(resultSet.next()) {
-                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
-                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
-
-                movies.add(newMovie);
-                //showtimeSet.next();
-            }
-        } catch(Exception e) {
-            System.out.println("Problem in getAllMovies!");
-            e.printStackTrace();
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("MySQL JDBC Driver not found", e);
         }
-        return new ArrayList<>(movies);
+    }
+    
+    /**
+     * Get all movies with their showtimes
+     */
+    public List<Movie> getAllMovies() throws SQLException {
+        List<Movie> movies = new ArrayList<>();
+        String query = """
+            SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
+                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
+            FROM Movies m
+            LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
+            GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
+                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+            """;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                Movie movie = new Movie();
+                movie.setMovieId(rs.getInt("movie_id"));
+                movie.setTitle(rs.getString("title"));
+                movie.setGenre(rs.getString("genre"));
+                movie.setRating(rs.getString("rating"));
+                movie.setMovieDescription(rs.getString("description"));
+                movie.setDuration(rs.getString("duration"));
+                movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
+                movie.setPosterUrl(rs.getString("poster_url"));
+                movie.setTrailerUrl(rs.getString("trailer_url"));
+                
+                String showtimes = rs.getString("showtimes");
+                movie.setShowtimes(showtimes != null ? showtimes : "TBA");
+                
+                movies.add(movie);
+            }
+        }
+        
+        return movies;
     }
     
     /**
      * Return all movies as JSON
      */
     public String getAllMoviesJson() {
-        return gson.toJson(getAllMovies());
+        try {
+            return gson.toJson(getAllMovies());
+        } catch (SQLException e) {
+            System.err.println("Error getting all movies: " + e.getMessage());
+            return "[]";
+        }
     }
     
     /**
-     * Search movies by title 
+     * Search movies by title using prepared statements for security
      */
-    public List<Movie> searchByTitle(String title) {
+    public List<Movie> searchByTitle(String title) throws SQLException {
+        List<Movie> movies = new ArrayList<>();
+        
         if (title == null || title.trim().isEmpty()) {
             return getAllMovies();
         }
         
-        String searchTerm = title.toLowerCase().trim();
-        try {
-            Statement state = conn.createStatement();
-            ResultSet resultSet = state.executeQuery("select * from Movies where title like '%" +searchTerm+ "%'"); //cinema_eBooking_system
-            System.out.println("Movies in Database Searched by " +searchTerm);
-
-
-
-            while(resultSet.next()) {
-                //ResultSet showtimeSet = state.executeQuery("select * from Showtimes where movie_id = " +resultSet.getInt("movie_id"));
-                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
-                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
-
-                movies.add(newMovie);
+        String query = """
+            SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
+                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
+            FROM Movies m
+            LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
+            WHERE m.title LIKE ?
+            GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
+                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+            """;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, "%" + title + "%");
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Movie movie = new Movie();
+                    movie.setMovieId(rs.getInt("movie_id"));
+                    movie.setTitle(rs.getString("title"));
+                    movie.setGenre(rs.getString("genre"));
+                    movie.setRating(rs.getString("rating"));
+                    movie.setMovieDescription(rs.getString("description"));
+                    movie.setDuration(rs.getString("duration"));
+                    movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
+                    movie.setPosterUrl(rs.getString("poster_url"));
+                    movie.setTrailerUrl(rs.getString("trailer_url"));
+                    
+                    String showtimes = rs.getString("showtimes");
+                    movie.setShowtimes(showtimes != null ? showtimes : "TBA");
+                    
+                    movies.add(movie);
+                }
             }
-
-        } catch(Exception e) {
-            System.out.println("Exception in searchByTitle!");
-            e.printStackTrace();
         }
+        
         return movies;
-        /*
-        return movies.stream()
-                .filter(movie -> movie.getTitle().toLowerCase().contains(searchTerm))
-                .collect(Collectors.toList());
-         */
     }
     
     /**
      * Search for movies and return as JSON
      */
     public String searchByTitleJson(String title) {
-        List<Movie> results = searchByTitle(title);
-        return gson.toJson(results);
+        try {
+            List<Movie> results = searchByTitle(title);
+            return gson.toJson(results);
+        } catch (SQLException e) {
+            System.err.println("Error searching movies by title: " + e.getMessage());
+            return "[]";
+        }
     }
     
     /**
-     * Filter movies by genre 
+     * Filter movies by genre using prepared statements for security
      */
-    public List<Movie> filterByGenre(String genre) {
+    public List<Movie> filterByGenre(String genre) throws SQLException {
+        List<Movie> movies = new ArrayList<>();
+        
         if (genre == null || genre.trim().isEmpty()) {
             return getAllMovies();
         }
         
-        String filterGenre = genre.toLowerCase().trim();
-
-        try {
-            Statement state = conn.createStatement();
-            ResultSet resultSet = state.executeQuery("select * from Movies where genre like '" +filterGenre+ "'"); //cinema_eBooking_system
-            System.out.println("Movies in Database with Genre:  " +filterGenre);
-
-            while(resultSet.next()) {
-                Movie newMovie = new Movie(resultSet.getInt("movie_id"), resultSet.getString("title"), resultSet.getString("genre"), resultSet.getString("rating"),
-                        resultSet.getString("description"), resultSet.getString("showtimes"), resultSet.getString("duration"), resultSet.getString("poster_url"),
-                        resultSet.getString("trailer_url"), resultSet.getBoolean("currently_showing"));
-
-                movies.add(newMovie);
+        String query = """
+            SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
+                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
+            FROM Movies m
+            LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
+            WHERE m.genre = ?
+            GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
+                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+            """;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setString(1, genre);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Movie movie = new Movie();
+                    movie.setMovieId(rs.getInt("movie_id"));
+                    movie.setTitle(rs.getString("title"));
+                    movie.setGenre(rs.getString("genre"));
+                    movie.setRating(rs.getString("rating"));
+                    movie.setMovieDescription(rs.getString("description"));
+                    movie.setDuration(rs.getString("duration"));
+                    movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
+                    movie.setPosterUrl(rs.getString("poster_url"));
+                    movie.setTrailerUrl(rs.getString("trailer_url"));
+                    
+                    String showtimes = rs.getString("showtimes");
+                    movie.setShowtimes(showtimes != null ? showtimes : "TBA");
+                    
+                    movies.add(movie);
+                }
             }
-
-        } catch(Exception e) {
-            System.out.println("Exception in searchByTitle!");
-            e.printStackTrace();
         }
-
+        
         return movies;
-        /*
-        return movies.stream()
-                .filter(movie -> movie.getGenre().toLowerCase().equals(filterGenre))
-                .collect(Collectors.toList());
-
-         */
     }
     
     /**
      * Filter movies and return as JSON
      */
     public String filterByGenreJson(String genre) {
-        List<Movie> results = filterByGenre(genre);
-        return gson.toJson(results);
-    }
-
-
-    public void setUpConnection(String hostURL, String databaseName, String username, String password) {
-
-        try {                                     //"jdbc:mysql://151.101.1.69:3306/databasename?useUnicode=true&characterEncoding=utf8"
-            conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
-            //"jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?useUnicode=true&characterEncoding=utf8");
-        }
-        catch(Exception e) {
-            System.out.println("Error in setUpConnection!");
-            e.printStackTrace();
+        try {
+            List<Movie> results = filterByGenre(genre);
+            return gson.toJson(results);
+        } catch (SQLException e) {
+            System.err.println("Error filtering movies by genre: " + e.getMessage());
+            return "[]";
         }
     }
-
-    public void closeConnection() {
-        if (conn != null) {
-            try {
-                conn.close();
-            } catch(Exception e) {
-                System.out.println("Did not close conn :'(");
+    
+    /**
+     * Get movie by ID
+     */
+    public Movie getMovieById(int movieId) throws SQLException {
+        String query = """
+            SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
+                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
+            FROM Movies m
+            LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
+            WHERE m.movie_id = ?
+            GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
+                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+            """;
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, movieId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Movie movie = new Movie();
+                    movie.setMovieId(rs.getInt("movie_id"));
+                    movie.setTitle(rs.getString("title"));
+                    movie.setGenre(rs.getString("genre"));
+                    movie.setRating(rs.getString("rating"));
+                    movie.setMovieDescription(rs.getString("description"));
+                    movie.setDuration(rs.getString("duration"));
+                    movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
+                    movie.setPosterUrl(rs.getString("poster_url"));
+                    movie.setTrailerUrl(rs.getString("trailer_url"));
+                    
+                    String showtimes = rs.getString("showtimes");
+                    movie.setShowtimes(showtimes != null ? showtimes : "TBA");
+                    
+                    return movie;
+                }
             }
         }
+        
+        return null;
+    }
+    
+    /**
+     * Get all distinct genres
+     */
+    public Set<String> getAllGenres() throws SQLException {
+        Set<String> genres = new HashSet<>();
+        String query = "SELECT DISTINCT genre FROM Movies WHERE genre IS NOT NULL";
+        
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                genres.add(rs.getString("genre"));
+            }
+        }
+        
+        return genres;
     }
 }
