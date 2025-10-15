@@ -7,6 +7,7 @@ const API_BASE_URL = 'http://localhost:8080/api';
 function transformBackendMovie(backendMovie: any, index: number): Movie {
   // Use database movie_id directly as the ID
   const uniqueId = backendMovie.movie_id?.toString() || 
+                   backendMovie.movieId?.toString() ||
                    backendMovie.id?.toString() || 
                    (index + 1).toString();
   
