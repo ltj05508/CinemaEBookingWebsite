@@ -26,7 +26,11 @@ export default function Home() {
       try {
         let results: Movie[];
         
-        if (q && q.trim()) {
+        if (q && q.trim() && genre && genre !== "ALL") {
+          // Search by title and filter by genre
+          let searchResults = await searchMovies(q.trim());
+          results = searchResults.filter(movie => movie.genres.includes(genre));
+        } else if (q && q.trim()) {
           // Search by title
           results = await searchMovies(q.trim());
         } else if (genre && genre !== "ALL") {
