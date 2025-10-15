@@ -34,7 +34,7 @@ export default async function MovieDetailPage({
         <p className="opacity-90">{movie.description}</p>
 
         {/* Showtimes (client component handles clicks) */}
-        <ShowtimeChips movieId={movie.id} showtimes={movie.showtimes} />
+        <ShowtimeChips movieId={id} showtimes={movie.showtimes} />
 
         <div className="space-y-2">
           <h2 className="font-semibold">Trailer</h2>

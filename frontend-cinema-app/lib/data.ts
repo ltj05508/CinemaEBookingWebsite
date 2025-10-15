@@ -5,10 +5,10 @@ const API_BASE_URL = 'http://localhost:8080/api';
 
 // Transform backend movie data to frontend Movie type
 function transformBackendMovie(backendMovie: any, index: number): Movie {
-  // Ensure unique ID by combining movie_id with index as fallback
+  // Use database movie_id directly as the ID
   const uniqueId = backendMovie.movie_id?.toString() || 
                    backendMovie.id?.toString() || 
-                   `movie-${index}`;
+                   (index + 1).toString();
   
   // Handle showtimes: convert string to array if needed
   let showtimes: string[];
@@ -111,15 +111,8 @@ export async function getGenres(): Promise<string[]> {
 // Get a single movie by ID
 export async function getMovieById(id: string): Promise<Movie | null> {
   try {
-    // Extract numeric ID from string ID (e.g., "movie-27" -> 27, "movie-0" -> 1)
-    let numericId: number;
-    if (id.startsWith('movie-')) {
-      const extracted = parseInt(id.replace('movie-', ''));
-      // Since frontend uses 0-based index but database uses 1-based IDs
-      numericId = extracted + 1;
-    } else {
-      numericId = parseInt(id);
-    }
+    // Convert string ID directly to numeric ID
+    const numericId = parseInt(id);
     
     // Validate the numeric ID
     if (isNaN(numericId) || numericId < 1) {

@@ -93,7 +93,7 @@ export default function BookingPage({ params }: PageProps) {
     <div className="grid gap-8 md:grid-cols-3">
       <div className="md:col-span-2 space-y-6">
         <div className="flex items-center gap-2 text-sm opacity-70">
-          <Link href={`/movies/${movie.id}`} className="hover:underline">
+          <Link href={`/movies/${id}`} className="hover:underline">
             ← Back to {movie.title}
           </Link>
           <span>•</span>
