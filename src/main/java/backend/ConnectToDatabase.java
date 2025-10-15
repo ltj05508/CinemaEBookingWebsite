@@ -3,10 +3,15 @@ package backend;
 import java.sql.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Properties;
+import javax.mail.*;
+import javax.mail.internet.*;
 
 public class ConnectToDatabase {
     public static Connection conn = null;
     public static List<Movie> movies;
+
+    public static Properties props = new Properties();
     public static void main(String[] args) {
         movies = new ArrayList<>();
         String hostURL = "127.0.0.1";
@@ -14,12 +19,17 @@ public class ConnectToDatabase {
         String username = "root";
         String password = "Booboorex"; //replace with your own password
 
-        setUpConnection(hostURL, databaseName, username, password);
+        //setUpConnection(hostURL, databaseName, username, password);
 
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
 
-        getAllMovies();
+
+        sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
+
+
+        //getAllMovies();
+
 
         if (conn != null) {
             try {
@@ -29,6 +39,41 @@ public class ConnectToDatabase {
             }
         }
     }
+
+    /**
+     * Sends out an email containing the given subject line and body text to the given email address
+     * Called for both forget password and registration confirmation?
+     */
+    public static void sendEmail(String toAddress, String subjectLine, String bodyText) {
+        try {
+            props.setProperty("mail.smtp.auth", "true");
+            props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
+            props.setProperty("mail.smtp.starttls.enable", "true");
+            props.setProperty("mail.smtp.host", "smtp.gmail.com");
+
+            Authenticator auth = new Authenticator() {
+                public PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication("noreplycinemaebooking@gmail.com", "eptp qpwv yhtm rfgc");
+                }
+            };
+
+            Session session = Session.getDefaultInstance(props, auth);
+            String fromAddress = "noreplycinemaebooking@gmail.com";
+
+            javax.mail.Message msg = new javax.mail.internet.MimeMessage(session);
+            msg.setFrom(new InternetAddress(fromAddress));
+            msg.setRecipient(Message.RecipientType.TO, new InternetAddress(toAddress));
+            msg.setSubject(subjectLine);
+            msg.setText(bodyText);
+            Transport.send(msg);
+
+        } catch (MessagingException me) {
+            System.err.println("Error in SendMessage!: " +me.getMessage());
+            me.printStackTrace();
+        }
+    }
+
+
 
     public static List<Movie> getAllMovies() {
         try {
