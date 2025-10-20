@@ -15,20 +15,23 @@ public class ConnectToDatabase {
     public static void main(String[] args) {
         movies = new ArrayList<>();
         String hostURL = "127.0.0.1";
-        String databaseName = "cinema_eBooking_system";
+        String databaseName = "CinemaEBooking";
         String username = "root";
         String password = "Booboorex"; //replace with your own password
 
-        //setUpConnection(hostURL, databaseName, username, password);
+        setUpConnection(hostURL, databaseName, username, password);
 
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
 
 
-        sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
+        //sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
 
 
         //getAllMovies();
+
+        User myUser = new User("1", "Jeff", "Schortz", "jschortz@gmail.com", "goodpassword", false);
+        insertUser(myUser);
 
 
         if (conn != null) {
@@ -70,6 +73,23 @@ public class ConnectToDatabase {
         } catch (MessagingException me) {
             System.err.println("Error in SendMessage!: " +me.getMessage());
             me.printStackTrace();
+        }
+    }
+
+    public static void insertUser(User user) {
+        try {
+            PreparedStatement state = conn.prepareStatement("INSERT INTO Users (user_id, first_name, last_name, email, password, login_status) VALUES (?, ?, ?, ?, ?, ?)");
+            state.setString(1, user.getUserId());
+            state.setString(2, user.getFirstName());
+            state.setString(3, user.getLastName());
+            state.setString(4, user.getEmail());
+            state.setString(5, user.getPassword());
+            state.setBoolean(6, user.getLoginStatus());
+
+            state.executeUpdate();
+        } catch(SQLException se) {
+            System.err.println("Error in insertUser! " + se);
+            se.printStackTrace();
         }
     }
 
