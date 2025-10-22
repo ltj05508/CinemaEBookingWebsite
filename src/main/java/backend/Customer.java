@@ -12,15 +12,15 @@ public class Customer extends User{
     public Customer(String userId, String firstName, String lastName, String email, String password,
                     boolean loginStatus, String customerId, State state){
         super(userId, firstName, lastName, email, password, loginStatus);
-        customerId = this.customerId;
-        state = this.state;
+        this.customerId = customerId;
+        this.state = state;
     }
 
     public String getCustomerId() {return customerId;}
     public State getState() {return state;}
 
-    public void setCustomerId(String customerId) {customerId = this.customerId;}
-    public void setState(State state) {state = this.state;}
+    public void setCustomerId(String customerId) {this.customerId = customerId;}
+    public void setState(State state) {this.state = state;}
 
     @Override
     public String toString() {

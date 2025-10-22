@@ -10,11 +10,11 @@ public class Admin extends User{
     public Admin(String userId, String firstName, String lastName, String email, String password,
                  boolean loginStatus, String adminId) {
         super(userId, firstName, lastName, email, password, loginStatus);
-        adminId = this.adminId;
+        this.adminId = adminId;
     }
 
     public String getAdminId() {return adminId;}
-    public void setAdminId(String adminId) {adminId = this.adminId;}
+    public void setAdminId(String adminId) {this.adminId = adminId;}
 
     @Override
     public String toString() {
