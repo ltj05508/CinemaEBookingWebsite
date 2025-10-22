@@ -10,6 +10,7 @@ public class User {
     private String password;
     private boolean loginStatus;
 
+
     public User() {
     }
 

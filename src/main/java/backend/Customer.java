@@ -3,6 +3,7 @@ package backend;
 public class Customer extends User{
     private String customerId;
     private State state;
+    private PaymentCard[] paymentCards = new PaymentCard[3];
 
     public Customer() {
         super();
@@ -18,9 +19,18 @@ public class Customer extends User{
 
     public String getCustomerId() {return customerId;}
     public State getState() {return state;}
+    public PaymentCard[] getPaymentCards() {return paymentCards;}
 
     public void setCustomerId(String customerId) {this.customerId = customerId;}
     public void setState(State state) {this.state = state;}
+    public void setPaymentCard(PaymentCard card) {
+        for(int i = 0; i < 3; i++) {
+            if (paymentCards[i] == null) {
+                paymentCards[i] = card;
+                break;
+            }
+        }
+    }
 
     @Override
     public String toString() {
@@ -33,6 +43,6 @@ public class Customer extends User{
                 ", loginStatus=" + getLoginStatus() + '\'' +
                 ", customerId=" + customerId + '\'' +
                 ", state=" + state + '\'' +
-                '}';
+                "}";
     }
 }

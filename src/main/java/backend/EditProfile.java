@@ -16,6 +16,31 @@ public class EditProfile {
         }
     }
 
+    public Customer getCustomerInfo(String userId) {
+        Customer cust = new Customer();
+        try {
+            Connection conn = getConnection();
+            PreparedStatement state = conn.prepareStatement("SELECT * FROM PaymentCards AS p INNER JOIN Customers AS c ON p.customer_id = c.customer_id INNER JOIN Users as u ON c.customer_id = u.user_id WHERE c.customer_id = ?");
+            state.setString(1, userId);
+            ResultSet rs = state.executeQuery();
+
+            if (rs.next()) {
+                cust.setUserId(rs.getString("user_id"));
+                cust.setFirstName(rs.getString("first_name"));
+                cust.setLastName(rs.getString("last_name"));
+                cust.setEmail(rs.getString("email"));
+                cust.setPassword(rs.getString("password"));
+                cust.setLoginStatus(rs.getBoolean("login_status"));
+                cust.setCustomerId(rs.getString("customer_id"));
+                cust.setPaymentCard(new PaymentCard(rs.getString("card_id"), rs.getString("card_number"), rs.getString("billing_address"), rs.getDate("expiration_date"), rs.getString("customer_id")));
+            }
+        } catch (SQLException se) {
+            System.err.println("Error in getCustomerInfo: " + se);
+            se.printStackTrace();
+        }
+        return cust;
+    }
+
     public void updateFirstName(User user, String newFirstName) {
         try {
             Connection conn = getConnection();
@@ -60,6 +85,4 @@ public class EditProfile {
             se.printStackTrace();
         }
     }
-
-
 }
