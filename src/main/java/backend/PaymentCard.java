@@ -16,11 +16,11 @@ public class PaymentCard {
     public PaymentCard() {}
 
     public PaymentCard(String cardId, String cardNumber, String billingAddress, Date expirationDate, String customerId) {
-        cardId = this.cardId;
-        cardNumber = this.cardNumber;
-        billingAddress = this.billingAddress;
-        expirationDate = this.expirationDate;
-        customerId = this.customerId;
+        this.cardId = cardId;
+        this.cardNumber = cardNumber;
+        this.billingAddress = billingAddress;
+        this.expirationDate = expirationDate;
+        this.customerId = customerId;
     }
 
     public String toJson() {
@@ -34,11 +34,11 @@ public class PaymentCard {
     public Date getExpirationDate() {return expirationDate;}
     public String getCustomerId() {return customerId;}
 
-    public void setCardId(String cardId) {cardId = this.cardId;}
-    public void setCardNumber(String cardNumber) {cardNumber = this.cardNumber;}
-    public void setBillingAddress(String billingAddress) {billingAddress = this.billingAddress;}
-    public void setExpirationDate(Date expirationDate) {expirationDate = this.expirationDate;}
-    public void setCustomerId(String customerId) {customerId = this.customerId;}
+    public void setCardId(String cardId) {this.cardId = cardId;}
+    public void setCardNumber(String cardNumber) {this.cardNumber = cardNumber;}
+    public void setBillingAddress(String billingAddress) {this.billingAddress = billingAddress;}
+    public void setExpirationDate(Date expirationDate) {this.expirationDate = expirationDate;}
+    public void setCustomerId(String customerId) {this.customerId = customerId;}
 
     @Override
     public String toString() {
