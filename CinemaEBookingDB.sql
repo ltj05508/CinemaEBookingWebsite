@@ -2,40 +2,163 @@ DROP DATABASE IF EXISTS cinema_eBooking_system;
 CREATE DATABASE cinema_eBooking_system;
 USE cinema_eBooking_system;
 
+CREATE TABLE IF NOT EXISTS Users (
+    user_id        VARCHAR(50) PRIMARY KEY,
+    first_name     VARCHAR(100) NOT NULL,
+    last_name      VARCHAR(100) NOT NULL,
+    email         VARCHAR(255) UNIQUE NOT NULL,
+    password      VARCHAR(255) NOT NULL,
+    login_status   BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS Admins (
+    admin_id   VARCHAR(50) PRIMARY KEY,
+    FOREIGN KEY (admin_id) REFERENCES Users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Customers (
+    customer_id   VARCHAR(50) PRIMARY KEY,
+    state        ENUM('Active', 'Inactive', 'Suspended') NOT NULL DEFAULT 'Active',
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES Users(user_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Addresses (
+    address_id    VARCHAR(50) PRIMARY KEY,
+    street       VARCHAR(255),
+    city         VARCHAR(100),
+    state        VARCHAR(50),
+    postal_code   VARCHAR(20),
+    country      VARCHAR(50),
+    customer_id   VARCHAR(50) NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS PaymentCards (
+    card_id         VARCHAR(50) PRIMARY KEY,
+    card_number     VARCHAR(20) NOT NULL,
+    expiration_date DATE NOT NULL,
+    customer_id     VARCHAR(50) NOT NULL,
+    billing_address_id VARCHAR(50),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (billing_address_id) REFERENCES Addresses(address_id)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE Movies (
     movie_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     genre VARCHAR(50),
     rating VARCHAR(10),            
     description TEXT,
-    duration VARCHAR(10),
+    duration_minutes INT,
     currently_showing BOOL,
     poster_url VARCHAR(255),       
     trailer_url VARCHAR(255)       
 );
 
+CREATE TABLE IF NOT EXISTS Promotions (
+    promo_id       VARCHAR(50) PRIMARY KEY,
+    code          VARCHAR(50) UNIQUE NOT NULL,
+    description   TEXT,
+    discount_percent DECIMAL(5,2),
+    valid_from     DATE,
+    valid_to       DATE
+);
+
+CREATE TABLE IF NOT EXISTS Theatres (
+    theatre_id     VARCHAR(50) PRIMARY KEY,
+    name          VARCHAR(255) NOT NULL,
+    address       VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS Showrooms (
+    showroom_id    VARCHAR(50) PRIMARY KEY,
+    name          VARCHAR(255),
+    seat_count     INT,
+    theatre_id     VARCHAR(50) NOT NULL,
+    FOREIGN KEY (theatre_id) REFERENCES Theatres(theatre_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Seats (
+    seat_id        VARCHAR(50) PRIMARY KEY,
+    row_label      VARCHAR(10),
+    seat_number    INT,
+    showroom_id    VARCHAR(50) NOT NULL,
+    FOREIGN KEY (showroom_id) REFERENCES Showrooms(showroom_id)
+        ON DELETE CASCADE
+);
+
 CREATE TABLE Showtimes (
     showtime_id INT AUTO_INCREMENT PRIMARY KEY,
-    movie_id INT,
+    movie_id INT NOT NULL,
+    showroom_id VARCHAR(50) NOT NULL,
     showtime TIME,
-    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id)
+    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id),
+    FOREIGN KEY (showroom_id) REFERENCES Showrooms(showroom_id)
+);
+
+CREATE TABLE IF NOT EXISTS Bookings (
+    booking_id     VARCHAR(50) PRIMARY KEY,
+    booking_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status        VARCHAR(50),
+    total_price    DECIMAL(10,2),
+    customer_id    VARCHAR(50) NOT NULL,
+    promo_id       VARCHAR(50),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (promo_id) REFERENCES Promotions(promo_id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS Payments (
+    payment_id     VARCHAR(50) PRIMARY KEY,
+    booking_id     VARCHAR(50) UNIQUE NOT NULL,
+    payment_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount        DECIMAL(10,2) NOT NULL,
+    card_id        VARCHAR(50) NOT NULL,
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (card_id) REFERENCES PaymentCards(card_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Tickets (
+    ticket_id      VARCHAR(50) PRIMARY KEY,
+    seat_id        VARCHAR(50) NOT NULL,
+    showtime_id        INT NOT NULL,
+    booking_id     VARCHAR(50) NOT NULL,
+    price         DECIMAL(10,2),
+    type          ENUM('adult','senior','child'),
+    FOREIGN KEY (seat_id) REFERENCES Seats(seat_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (showtime_id) REFERENCES Showtimes(showtime_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
+        ON DELETE CASCADE,
+    UNIQUE (seat_id, showtime_id) -- ensures logical seat per show
 );
 
 -- Insert movies with proper currently_showing values
-INSERT INTO Movies (title, genre, rating, description, duration, currently_showing, poster_url, trailer_url)
+INSERT INTO Movies (title, genre, rating, description, duration_minutes, currently_showing, poster_url, trailer_url)
 VALUES
-('Inception', 'Sci-Fi', 'PG-13', 'A thief who steals corporate secrets through dream-sharing technology is given a chance to erase his past crimes.', '2:28', false, 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', 'https://www.youtube.com/watch?v=YoHD9XEInc0'),
-('The Matrix', 'Sci-Fi', 'R', 'A computer hacker learns about the true nature of reality and his role in the war against its controllers.', '2:16', false, 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg', 'https://www.youtube.com/watch?v=vKQi3bBA1y8'),
-('The Godfather', 'Crime', 'R', 'The aging patriarch of an organized crime dynasty transfers control of his empire to his reluctant son.', '2:57', true, 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', 'https://www.youtube.com/watch?v=sY1S34973zA'),
-('Interstellar', 'Sci-Fi', 'PG-13', 'A team of explorers travels through a wormhole in space in an attempt to ensure humanity survival.', '2:49', true, 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', 'https://www.youtube.com/watch?v=zSWdZVtXT7E'),
-('The Dark Knight', 'Action', 'PG-13', 'Batman sets out to dismantle organized crime in Gotham but finds himself facing the Joker.', '2:32', true, 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', 'https://www.youtube.com/watch?v=EXeTwQWrcwY'),
-('Pulp Fiction', 'Crime', 'R', 'The lives of two mob hitmen, a boxer, and a pair of diner bandits intertwine in four tales.', '2:29', false, 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', 'https://www.youtube.com/watch?v=s7EdQ4FqbhY');
+('Inception', 'Sci-Fi', 'PG-13', 'A thief who steals corporate secrets through dream-sharing technology is given a chance to erase his past crimes.', 148, false, 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', 'https://www.youtube.com/watch?v=YoHD9XEInc0'),
+('The Matrix', 'Sci-Fi', 'R', 'A computer hacker learns about the true nature of reality and his role in the war against its controllers.', 136, false, 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg', 'https://www.youtube.com/watch?v=vKQi3bBA1y8'),
+('The Godfather', 'Crime', 'R', 'The aging patriarch of an organized crime dynasty transfers control of his empire to his reluctant son.', 177, true, 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', 'https://www.youtube.com/watch?v=sY1S34973zA'),
+('Interstellar', 'Sci-Fi', 'PG-13', 'A team of explorers travels through a wormhole in space in an attempt to ensure humanity survival.', 169, true, 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', 'https://www.youtube.com/watch?v=zSWdZVtXT7E'),
+('The Dark Knight', 'Action', 'PG-13', 'Batman sets out to dismantle organized crime in Gotham but finds himself facing the Joker.', 152, true, 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', 'https://www.youtube.com/watch?v=EXeTwQWrcwY'),
+('Pulp Fiction', 'Crime', 'R', 'The lives of two mob hitmen, a boxer, and a pair of diner bandits intertwine in four tales.', 149, false, 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', 'https://www.youtube.com/watch?v=s7EdQ4FqbhY');
 
 -- Insert showtimes (only once per movie-time combination)
-INSERT INTO Showtimes (movie_id, showtime) VALUES
-(1, '14:00:00'), (1, '17:00:00'), (1, '20:00:00'),
-(2, '13:30:00'), (2, '16:30:00'), (2, '19:30:00'),
-(3, '15:00:00'), (3, '18:00:00'), (3, '21:00:00'),
-(4, '16:30:00'), (4, '19:30:00'), (4, '22:30:00'),
-(5, '15:30:00'), (5, '18:30:00'), (5, '21:30:00'),
-(6, '12:30:00'), (6, '15:30:00'), (6, '18:30:00');
+INSERT INTO Showtimes (movie_id, showroom_id, show_time) VALUES
+(1, 1, '14:00:00'), (1, 1, '17:00:00'), (1, 1, '20:00:00'),
+(2, 1, '13:30:00'), (2, 1, '16:30:00'), (2, 1, '19:30:00'),
+(3, 2, '15:00:00'), (3, 2, '18:00:00'), (3, 2, '21:00:00'),
+(4, 2, '16:30:00'), (4, 2, '19:30:00'), (4, 2, '22:30:00'),
+(5, 3, '15:30:00'), (5, 3, '18:30:00'), (5, 3, '21:30:00'),
+(6, 3, '12:30:00'), (6, 3, '15:30:00'), (6, 3, '18:30:00');
