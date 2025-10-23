@@ -39,10 +39,17 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
         
-        <!-- Spring Mail for email sending -->
+        <!-- Spring Mail for email sending (Jakarta Mail) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        
+        <!-- JavaMail API for ConnectToDatabase.java -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
         </dependency>
         
         <!-- Spring Security for BCrypt password hashing -->
