@@ -14,6 +14,29 @@ public class EmailService {
     private String baseUrl;
     
     /**
+     * Send verification code to new user for email confirmation.
+     * @param toEmail Recipient email address
+     * @param firstName User's first name
+     * @param verificationCode 6-digit verification code
+     */
+    public void sendVerificationCodeEmail(String toEmail, String firstName, String verificationCode) {
+        String subject = "Verify Your Cinema E-Booking Account";
+        String body = String.format(
+            "Hello %s,\n\n" +
+            "Thank you for registering with Cinema E-Booking!\n\n" +
+            "Your verification code is: %s\n\n" +
+            "Please enter this code on the verification page to activate your account.\n" +
+            "This code will expire in 24 hours.\n\n" +
+            "If you did not create this account, please ignore this email.\n\n" +
+            "Best regards,\n" +
+            "Cinema E-Booking Team",
+            firstName, verificationCode
+        );
+        
+        ConnectToDatabase.sendEmail(toEmail, subject, body);
+    }
+    
+    /**
      * Send email confirmation link to new user.
      * @param toEmail Recipient email address
      * @param firstName User's first name
