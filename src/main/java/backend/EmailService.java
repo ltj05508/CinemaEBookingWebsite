@@ -3,6 +3,10 @@ package backend;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.mail.*;
+import javax.mail.internet.InternetAddress;
+import java.util.Properties;
+
 /**
  * Service for sending emails (confirmation, password reset, notifications).
  * Uses the existing ConnectToDatabase.sendEmail() method.
@@ -105,12 +109,38 @@ public class EmailService {
     }
     
     /**
-     * Send a generic email using ConnectToDatabase.sendEmail().
+     * Send a generic email using Gmail services.
      * @param to Recipient email address
      * @param subject Email subject
      * @param body Email body
      */
     private void sendEmail(String to, String subject, String body) {
-        ConnectToDatabase.sendEmail(to, subject, body);
+        try {
+            Properties props = new Properties();
+            props.setProperty("mail.smtp.auth", "true");
+            props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
+            props.setProperty("mail.smtp.starttls.enable", "true");
+            props.setProperty("mail.smtp.host", "smtp.gmail.com");
+
+            Authenticator auth = new Authenticator() {
+                public PasswordAuthentication getPasswordAuthentication() {
+                    return new PasswordAuthentication("noreplycinemaebooking@gmail.com", "eptp qpwv yhtm rfgc");
+                }
+            };
+
+            Session session = Session.getDefaultInstance(props, auth);
+            String fromAddress = "noreplycinemaebooking@gmail.com";
+
+            javax.mail.Message msg = new javax.mail.internet.MimeMessage(session);
+            msg.setFrom(new InternetAddress(fromAddress));
+            msg.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
+            msg.setSubject(subject);
+            msg.setText(body);
+            Transport.send(msg);
+
+        } catch (MessagingException me) {
+            System.err.println("Error in SendMessage!: " +me.getMessage());
+            me.printStackTrace();
+        }
     }
 }

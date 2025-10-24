@@ -21,6 +21,7 @@ public class ConnectToDatabase {
 
         setUpConnection(hostURL, databaseName, username, password);
 
+
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
 
@@ -30,9 +31,13 @@ public class ConnectToDatabase {
 
         //getAllMovies();
 
-        User myUser = new User("1", "Jeff", "Schortz", "jschortz@gmail.com", "goodpassword", false);
-        insertUser(myUser);
+        //User myUser = new User("1", "Jeff", "Schortz", "jschortz@gmail.com", "goodpassword", false);
+        //Customer myCust = new Customer("1", "Jeff", "Schortz", "jschortz@gmail.com", "goodpassword", false, "1", State.Active);
+        //insertCustomer(myCust);
 
+        Customer newCust = getCustomerInfo("1");
+        System.out.println(newCust);
+        System.out.println(newCust.getPaymentCards()[0]);
 
         if (conn != null) {
             try {
@@ -43,10 +48,35 @@ public class ConnectToDatabase {
         }
     }
 
+    public static Customer getCustomerInfo(String userId) {
+        Customer cust = new Customer();
+        try {
+            //Connection conn = getConnection();
+            PreparedStatement state = conn.prepareStatement("SELECT * FROM PaymentCards AS p INNER JOIN Customers AS c ON p.customer_id = c.customer_id INNER JOIN Users as u ON c.customer_id = u.user_id WHERE c.customer_id = ?");
+            state.setString(1, userId);
+            ResultSet rs = state.executeQuery();
+
+            rs.next();
+            cust.setUserId(rs.getString("user_id"));
+            cust.setFirstName(rs.getString("first_name"));
+            cust.setLastName(rs.getString("last_name"));
+            cust.setEmail(rs.getString("email"));
+            cust.setPassword(rs.getString("password"));
+            cust.setLoginStatus(rs.getBoolean("login_status"));
+            cust.setCustomerId(rs.getString("customer_id"));
+            cust.setPaymentCard(new PaymentCard(rs.getString("card_id"), rs.getString("card_number"), rs.getString("billing_address"), rs.getDate("expiration_date"), rs.getString("customer_id")));
+        } catch (SQLException se) {
+            System.err.println("Error in getCustomerInfo: " + se);
+            se.printStackTrace();
+        }
+        return cust;
+    }
+
     /**
      * Sends out an email containing the given subject line and body text to the given email address
      * Called for both forget password and registration confirmation?
      */
+
     public static void sendEmail(String toAddress, String subjectLine, String bodyText) {
         try {
             props.setProperty("mail.smtp.auth", "true");
@@ -75,6 +105,26 @@ public class ConnectToDatabase {
             me.printStackTrace();
         }
     }
+
+
+    public static void insertCustomer(Customer cust) {
+        try {
+            insertUser(cust);
+
+            PreparedStatement state = conn.prepareStatement("INSERT INTO Customers (customer_id, state) VALUES (?, ?)");
+            state.setString(1, cust.getUserId());
+            state.setObject(2, State.Active.toString());
+
+            //state = conn.prepareStatement("INSERT INTO Customers ()");
+           // state.setString("");
+
+            state.executeUpdate();
+        } catch(SQLException se) {
+            System.err.println("Error in insertCustomer! " + se);
+            se.printStackTrace();
+        }
+    }
+
 
     public static void insertUser(User user) {
         try {
