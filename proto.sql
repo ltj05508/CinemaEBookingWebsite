@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS `CinemaEBooking` ;
 use CinemaEBooking;
 
-CREATE TYPE customer_state AS ENUM('Active', 'Inactive', 'Suspended');
-CREATE TYPE ticket_type AS ENUM('adult', 'senior', 'child');
+#CREATE TYPE customer_state AS ENUM('Active', 'Inactive', 'Suspended');
+#CREATE TYPE ticket_type AS ENUM('adult', 'senior', 'child');
 
 CREATE TABLE IF NOT EXISTS Users (
     user_id        VARCHAR(50) PRIMARY KEY,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS Admins (
 
 CREATE TABLE IF NOT EXISTS Customers (
     customer_id   VARCHAR(50) PRIMARY KEY,
-    state        ENUM('Active', 'Inactive', 'Suspended') NOT NULL DEFAULT 'Active',
+    state         ENUM('Active', 'Inactive', 'Suspended') NOT NULL DEFAULT 'Active',
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES Users(user_id)
         ON DELETE CASCADE
@@ -127,3 +127,29 @@ VALUES
 ('The Matrix', 'Sci-Fi', 9.0, 'Blah blah blah', '11:00,1:00,5:00', 136),
 ('Interstellar', 'Sci-Fi', 4.7, 'Heard good things', '10:30,12:00', 169),
 ('The Godfather', 'Crime', 10, 'Movie', '1:00,2:00,5:00,6:00', 175);
+
+INSERT INTO Users (user_id, first_name, last_name, email, password, login_status)
+VALUES
+('1', 'John', 'Smith', 'johnsmith22@gmail.com', 'password123', false),
+('2', 'Leo', 'Jahn', 'ljahn724@gmail.com', 'goodPassword!', false),
+('3', 'Ahdmin', 'Jones', 'ahdminjones123@gmail.com', 'strongPassword', false);
+
+INSERT INTO Customers (customer_id, state)
+VALUES
+('1', 'Active'),
+('2', 'Inactive');
+
+INSERT INTO PaymentCards(card_id, card_number, billing_address, expiration_date, customer_id)
+VALUES
+('1', '12345678', '123 Sycamore Lane', '2030-10-11', '1'),
+('2', '98765432', '123 Sycamore Lane', '2025-09-01', '1');
+
+INSERT INTO Admins (admin_id)
+VALUES
+('3');
+
+INSERT INTO Promotions(promo_id, code, description, discount_percent, valid_from, valid_to)
+VALUES
+('1', 'promo1234', 'Test promotion for 15% off!', 15.00, '2025-10-01', '2025-12-25');
+
+
