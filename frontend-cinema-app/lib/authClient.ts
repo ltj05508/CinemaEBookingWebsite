@@ -73,6 +73,7 @@ export async function registerUser(body: {
   lastName: string;
   email: string;
   password: string;
+  marketingOptIn?: boolean;
 }) {
   const res = await fetch(`${API_BASE}/api/auth/signup`, {
     method: "POST",
