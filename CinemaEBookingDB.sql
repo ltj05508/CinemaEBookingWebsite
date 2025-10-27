@@ -178,7 +178,7 @@ INSERT INTO Showtimes (movie_id, showroom_id, showtime) VALUES
 INSERT INTO Users (user_id, first_name, last_name, email, password, login_status)
 VALUES
 ('1', 'John', 'Smith', 'johnsmith22@gmail.com', 'password123', false),
-('2', 'Leo', 'Jahn', 'ljahn724@gmail.com', 'goodPassword!', false),
+('2', 'Leo', 'Jahn', 'leojahn@gmail.com', 'goodPassword!', false),
 ('3', 'Ahdmin', 'Jones', 'ahdminjones123@gmail.com', 'strongPassword', false);
 
 INSERT INTO Customers (customer_id, state)
