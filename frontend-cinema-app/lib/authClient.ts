@@ -1,11 +1,9 @@
-// Optional base URL (useful if your backend is on a different origin/port).
-// If unset, same-origin /api/... routes will be used.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
-
 // lib/authClient.ts
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
+
 export async function login(body: { email: string; password: string; remember?: boolean }) {
-  const res = await fetch("/api/auth/login", {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -23,7 +21,7 @@ export async function login(body: { email: string; password: string; remember?: 
 }
 
 export async function requestPasswordReset(body: { email: string }) {
-  const res = await fetch("/api/auth/forgot-password", {
+  const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -40,7 +38,7 @@ export async function requestPasswordReset(body: { email: string }) {
 }
 
 export async function verifyEmail(code: string) {
-  const res = await fetch("/api/auth/verify", {
+  const res = await fetch(`${API_BASE}/api/auth/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -58,7 +56,7 @@ export async function verifyEmail(code: string) {
 }
 
 export async function getAuthStatus() {
-  const res = await fetch("/api/auth/status", {
+  const res = await fetch(`${API_BASE}/api/auth/status`, {
     method: "GET",
     credentials: "include",
   });
@@ -67,7 +65,7 @@ export async function getAuthStatus() {
 }
 
 export async function logout() {
-  const res = await fetch("/api/auth/logout", {
+  const res = await fetch(`${API_BASE}/api/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
