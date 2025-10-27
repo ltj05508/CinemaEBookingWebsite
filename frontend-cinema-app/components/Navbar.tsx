@@ -9,17 +9,17 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-5 text-sm">
-            <Link href="/movies" className="hover:underline">
-              Movies
-            </Link>
-            <Link href="/about" className="hover:underline">
-              About
-            </Link>
-            <Link href="/login" className="hover:underline">
-              Login
-            </Link>
-          </div>
-        </nav>
-      </header>
+          <Link href="/movies" className="hover:underline">
+            Movies
+          </Link>
+          <Link href="/about" className="hover:underline">
+            About
+          </Link>
+          <Link href="/login" className="hover:underline">
+            Login
+          </Link>
+        </div>
+      </nav>
+    </header>
   );
 }
