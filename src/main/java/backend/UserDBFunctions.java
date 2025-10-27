@@ -71,7 +71,7 @@ public class UserDBFunctions {
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
-                "SELECT user_id, first_name, last_name, email, password, login_status FROM Users WHERE email = ?"
+                "SELECT user_id, first_name, last_name, email, password, login_status, marketing_opt_in FROM Users WHERE email = ?"
             );
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();

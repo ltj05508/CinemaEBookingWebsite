@@ -3,8 +3,8 @@ package backend;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
 import java.util.Properties;
 
 /**
@@ -37,7 +37,7 @@ public class EmailService {
             firstName, verificationCode
         );
         
-        ConnectToDatabase.sendEmail(toEmail, subject, body);
+        sendEmail(toEmail, subject, body);
     }
     
     /**
@@ -131,7 +131,7 @@ public class EmailService {
             Session session = Session.getDefaultInstance(props, auth);
             String fromAddress = "noreplycinemaebooking@gmail.com";
 
-            javax.mail.Message msg = new javax.mail.internet.MimeMessage(session);
+            jakarta.mail.Message msg = new jakarta.mail.internet.MimeMessage(session);
             msg.setFrom(new InternetAddress(fromAddress));
             msg.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
             msg.setSubject(subject);

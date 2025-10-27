@@ -1,25 +1,33 @@
 package backend;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.sql.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Properties;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 
 public class ConnectToDatabase {
     public static Connection conn = null;
     public static List<Movie> movies;
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public static Properties props = new Properties();
     public static void main(String[] args) {
         movies = new ArrayList<>();
         String hostURL = "127.0.0.1";
-        String databaseName = "CinemaEBooking";
+        String databaseName = "cinema_eBooking_system";
         String username = "root";
         String password = "Booboorex"; //replace with your own password
 
         setUpConnection(hostURL, databaseName, username, password);
+
+
+        password = "goodPassword!";
+        String hashedPassword = passwordEncoder.encode(password);
+        System.out.println("Hashed password: " + hashedPassword);
 
 
         //readMovies();
@@ -27,6 +35,8 @@ public class ConnectToDatabase {
 
 
         //sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
+        EmailService es = new EmailService();
+        es.sendVerificationCodeEmail("ljahn724@gmail.com", "Leo", "123456");
 
 
         //getAllMovies();
@@ -35,9 +45,11 @@ public class ConnectToDatabase {
         //Customer myCust = new Customer("1", "Jeff", "Schortz", "jschortz@gmail.com", "goodpassword", false, "1", State.Active);
         //insertCustomer(myCust);
 
+        /*
         Customer newCust = getCustomerInfo("1");
         System.out.println(newCust);
         System.out.println(newCust.getPaymentCards()[0]);
+         */
 
         if (conn != null) {
             try {
@@ -77,6 +89,7 @@ public class ConnectToDatabase {
      * Called for both forget password and registration confirmation?
      */
 
+
     public static void sendEmail(String toAddress, String subjectLine, String bodyText) {
         try {
             props.setProperty("mail.smtp.auth", "true");
@@ -93,7 +106,7 @@ public class ConnectToDatabase {
             Session session = Session.getDefaultInstance(props, auth);
             String fromAddress = "noreplycinemaebooking@gmail.com";
 
-            javax.mail.Message msg = new javax.mail.internet.MimeMessage(session);
+            jakarta.mail.Message msg = new jakarta.mail.internet.MimeMessage(session);
             msg.setFrom(new InternetAddress(fromAddress));
             msg.setRecipient(Message.RecipientType.TO, new InternetAddress(toAddress));
             msg.setSubject(subjectLine);
@@ -105,6 +118,7 @@ public class ConnectToDatabase {
             me.printStackTrace();
         }
     }
+
 
 
     public static void insertCustomer(Customer cust) {

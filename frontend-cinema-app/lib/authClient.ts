@@ -98,7 +98,7 @@ export async function registerUser(body: {
  *  Matches backend: verifyEmail(code) -> boolean success
  * ========================= */
 export async function verifyEmail(code: string) {
-  const res = await fetch(`${API_BASE}/verify-email`, {
+  const res = await fetch(`${API_BASE}/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),
