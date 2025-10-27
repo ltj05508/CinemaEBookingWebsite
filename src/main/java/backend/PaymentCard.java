@@ -9,16 +9,16 @@ import java.util.Date;
 public class PaymentCard {
     private String cardId;
     private String cardNumber;
-    private String billingAddress;
+    private String billingAddressId;
     private Date expirationDate;
     private String customerId;
 
     public PaymentCard() {}
 
-    public PaymentCard(String cardId, String cardNumber, String billingAddress, Date expirationDate, String customerId) {
+    public PaymentCard(String cardId, String cardNumber, String billingAddressId, Date expirationDate, String customerId) {
         this.cardId = cardId;
         this.cardNumber = cardNumber;
-        this.billingAddress = billingAddress;
+        this.billingAddressId = billingAddressId;
         this.expirationDate = expirationDate;
         this.customerId = customerId;
     }
@@ -30,13 +30,13 @@ public class PaymentCard {
 
     public String getCardId() {return cardId;}
     public String getCardNumber() {return cardNumber;}
-    public String getBillingAddress() {return billingAddress;}
+    public String getBillingAddressId() {return billingAddressId;}
     public Date getExpirationDate() {return expirationDate;}
     public String getCustomerId() {return customerId;}
 
     public void setCardId(String cardId) {this.cardId = cardId;}
     public void setCardNumber(String cardNumber) {this.cardNumber = cardNumber;}
-    public void setBillingAddress(String billingAddress) {this.billingAddress = billingAddress;}
+    public void setBillingAddress(String billingAddressId) {this.billingAddressId = billingAddressId;}
     public void setExpirationDate(Date expirationDate) {this.expirationDate = expirationDate;}
     public void setCustomerId(String customerId) {this.customerId = customerId;}
 
@@ -45,7 +45,7 @@ public class PaymentCard {
         return "PaymentCard{" +
                 "cardId=" + cardId +
                 ", cardNumber='" + cardNumber + '\'' +
-                ", billingAddress='" + billingAddress + '\'' +
+                ", billingAddressId='" + billingAddressId + '\'' +
                 ", expirationDate='" + expirationDate + '\'' +
                 ", customerId='" + customerId + '\'' +
                 '}';

@@ -10,7 +10,7 @@ public class Movie {
     private String rating; 
     private String movieDescription;
     private String showtimes; 
-    private String duration; 
+    private String duration;
     private String posterUrl;
     private String trailerUrl;
     private boolean isCurrentlyShowing;

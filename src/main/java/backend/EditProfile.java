@@ -32,7 +32,7 @@ public class EditProfile {
                 cust.setPassword(rs.getString("password"));
                 cust.setLoginStatus(rs.getBoolean("login_status"));
                 cust.setCustomerId(rs.getString("customer_id"));
-                cust.setPaymentCard(new PaymentCard(rs.getString("card_id"), rs.getString("card_number"), rs.getString("billing_address"), rs.getDate("expiration_date"), rs.getString("customer_id")));
+                cust.setPaymentCard(new PaymentCard(rs.getString("card_id"), rs.getString("card_number"), rs.getString("billing_address_id"), rs.getDate("expiration_date"), rs.getString("customer_id")));
             }
         } catch (SQLException se) {
             System.err.println("Error in getCustomerInfo: " + se);
