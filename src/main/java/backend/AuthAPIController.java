@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
+
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +22,20 @@ public class AuthAPIController {
     
     @Autowired
     private UserFunctions userFunctions;
+
+    @GetMapping("/getUserInfo/{email}")
+    public ResponseEntity<String> getUserInfo(@PathVariable String email) {
+        try {
+            User myUser = UserDBFunctions.findUserByEmail(email);
+            if (myUser != null) {
+                return ResponseEntity.ok(myUser.toJson());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movie: " + e.getMessage() + "\"}");
+        }
+    }
     
     /**
      * Register a new user.
@@ -43,9 +59,18 @@ public class AuthAPIController {
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
+            boolean holder;
+
+            if (marketingOptIn.equals("0")) {
+                holder = false;
+            } else {
+                holder = true;
+            }
+
+            //userFunctions = new UserFunctions(new EmailService());
             // Register user
-            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password, Boolean.parseBoolean(marketingOptIn));
+            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password, holder);
             
             if (verificationCode == null) {
                 response.put("success", false);

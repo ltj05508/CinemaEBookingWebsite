@@ -25,18 +25,23 @@ public class ConnectToDatabase {
         setUpConnection(hostURL, databaseName, username, password);
 
 
+        /*
         password = "goodPassword!";
         String hashedPassword = passwordEncoder.encode(password);
         System.out.println("Hashed password: " + hashedPassword);
+         */
 
 
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
 
 
+        UserFunctions uf = new UserFunctions(new EmailService());
+        uf.registerUser("John", "Snow", "ljahn724@gmail.com", "testingpass", true);
+
         //sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
-        EmailService es = new EmailService();
-        es.sendVerificationCodeEmail("ljahn724@gmail.com", "Leo", "123456");
+        //EmailService es = new EmailService();
+        //es.sendVerificationCodeEmail("ljahn724@gmail.com", "Leo", "123456");
 
 
         //getAllMovies();
