@@ -94,13 +94,13 @@ public class MovieSearchandFilter {
         
         String query = """
             SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
-                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url,
                    GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
             FROM Movies m
             LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
             WHERE m.title LIKE ?
             GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
-                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+                     m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url
             """;
         
         try (Connection conn = getConnection();
@@ -116,7 +116,7 @@ public class MovieSearchandFilter {
                     movie.setGenre(rs.getString("genre"));
                     movie.setRating(rs.getString("rating"));
                     movie.setMovieDescription(rs.getString("description"));
-                    movie.setDuration(rs.getString("duration"));
+                    movie.setDuration(rs.getInt("duration_minutes") + "");
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
@@ -157,13 +157,13 @@ public class MovieSearchandFilter {
         
         String query = """
             SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
-                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url,
                    GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
             FROM Movies m
             LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
             WHERE m.genre = ?
             GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
-                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+                     m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url
             """;
         
         try (Connection conn = getConnection();
@@ -179,7 +179,7 @@ public class MovieSearchandFilter {
                     movie.setGenre(rs.getString("genre"));
                     movie.setRating(rs.getString("rating"));
                     movie.setMovieDescription(rs.getString("description"));
-                    movie.setDuration(rs.getString("duration"));
+                    movie.setDuration(rs.getInt("duration_minutes") + "");
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
@@ -214,13 +214,13 @@ public class MovieSearchandFilter {
     public Movie getMovieById(int movieId) throws SQLException {
         String query = """
             SELECT m.movie_id, m.title, m.genre, m.rating, m.description, 
-                   m.duration, m.currently_showing, m.poster_url, m.trailer_url,
+                   m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url,
                    GROUP_CONCAT(TIME_FORMAT(s.showtime, '%h:%i %p') ORDER BY s.showtime SEPARATOR ', ') as showtimes
             FROM Movies m
             LEFT JOIN Showtimes s ON m.movie_id = s.movie_id
             WHERE m.movie_id = ?
             GROUP BY m.movie_id, m.title, m.genre, m.rating, m.description, 
-                     m.duration, m.currently_showing, m.poster_url, m.trailer_url
+                     m.duration_minutes, m.currently_showing, m.poster_url, m.trailer_url
             """;
         
         try (Connection conn = getConnection();
@@ -236,7 +236,7 @@ public class MovieSearchandFilter {
                     movie.setGenre(rs.getString("genre"));
                     movie.setRating(rs.getString("rating"));
                     movie.setMovieDescription(rs.getString("description"));
-                    movie.setDuration(rs.getString("duration"));
+                    movie.setDuration(rs.getInt("duration_minutes") + "");
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
