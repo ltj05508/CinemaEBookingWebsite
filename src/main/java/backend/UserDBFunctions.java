@@ -84,7 +84,7 @@ public class UserDBFunctions {
                     rs.getString("email"),
                     rs.getString("password"),
                     rs.getBoolean("login_status"),
-                    rs.getBoolean("marketingOptIn")
+                    rs.getBoolean("marketing_opt_in")
                 );
             }
             

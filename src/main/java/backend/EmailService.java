@@ -115,12 +115,18 @@ public class EmailService {
      * @param body Email body
      */
     private void sendEmail(String to, String subject, String body) {
+        System.out.println("=== Attempting to send email ===");
+        System.out.println("To: " + to);
+        System.out.println("Subject: " + subject);
+        
         try {
             Properties props = new Properties();
             props.setProperty("mail.smtp.auth", "true");
             props.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
             props.setProperty("mail.smtp.starttls.enable", "true");
             props.setProperty("mail.smtp.host", "smtp.gmail.com");
+            props.setProperty("mail.smtp.port", "587"); // SMTP port for TLS
+            props.setProperty("mail.debug", "true"); // Enable debug output
 
             Authenticator auth = new Authenticator() {
                 public PasswordAuthentication getPasswordAuthentication() {
@@ -128,7 +134,8 @@ public class EmailService {
                 }
             };
 
-            Session session = Session.getDefaultInstance(props, auth);
+            Session session = Session.getInstance(props, auth);
+            session.setDebug(true); // Enable session debugging
             String fromAddress = "noreplycinemaebooking@gmail.com";
 
             jakarta.mail.Message msg = new jakarta.mail.internet.MimeMessage(session);
@@ -136,11 +143,16 @@ public class EmailService {
             msg.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
             msg.setSubject(subject);
             msg.setText(body);
+            
+            System.out.println("Connecting to SMTP server...");
             Transport.send(msg);
+            System.out.println("✅ Email sent successfully!");
 
         } catch (MessagingException me) {
-            System.err.println("Error in SendMessage!: " +me.getMessage());
+            System.err.println("❌ Error sending email: " + me.getMessage());
             me.printStackTrace();
+            // Re-throw as runtime exception so caller knows it failed
+            throw new RuntimeException("Failed to send email: " + me.getMessage(), me);
         }
     }
 }

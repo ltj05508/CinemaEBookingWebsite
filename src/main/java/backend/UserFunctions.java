@@ -25,37 +25,52 @@ public class UserFunctions {
      * @return Verification code if successful, null if error
      */
     public String registerUser(String firstName, String lastName, String email, String password, boolean marketingOptIn) {
+        System.out.println("=== Starting user registration ===");
+        System.out.println("Email: " + email);
+        
         // Validate inputs
         if (firstName == null || firstName.trim().isEmpty() ||
             lastName == null || lastName.trim().isEmpty() ||
             email == null || email.trim().isEmpty() ||
             password == null || password.length() < 8) {
-            System.err.println("Invalid registration data");
+            System.err.println("❌ Invalid registration data");
             return null;
         }
+        System.out.println("✅ Input validation passed");
         
         // Check if email already exists
         User existingUser = UserDBFunctions.findUserByEmail(email);
         if (existingUser != null) {
-            System.err.println("Email already registered");
+            System.err.println("❌ Email already registered");
             return null;
         }
+        System.out.println("✅ Email is unique");
         
         // Hash password
         String hashedPassword = passwordEncoder.encode(password);
+        System.out.println("✅ Password hashed");
         
         // Create user in database (state = Inactive)
         String userId = UserDBFunctions.createUser(firstName, lastName, email, hashedPassword, marketingOptIn);
         if (userId == null) {
-            System.err.println("Failed to create user in database");
+            System.err.println("❌ Failed to create user in database");
             return null;
         }
+        System.out.println("✅ User created in database with ID: " + userId);
         
         // Generate verification code
         String verificationCode = CodeManager.generateVerificationCode(email);
+        System.out.println("✅ Verification code generated: " + verificationCode);
         
         // Send verification email
-        emailService.sendVerificationCodeEmail(email, firstName, verificationCode);
+        try {
+            emailService.sendVerificationCodeEmail(email, firstName, verificationCode);
+            System.out.println("✅ Verification email sent successfully");
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send verification email: " + e.getMessage());
+            e.printStackTrace();
+            // Still return the code so user can verify manually if needed
+        }
         
         return verificationCode;
     }

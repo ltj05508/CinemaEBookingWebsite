@@ -44,28 +44,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-            <version>2.1.2</version> <!-- Or the latest stable version -->
-        </dependency>
+        
+        <!-- Legacy JavaMail API for existing ConnectToDatabase.java -->
         <dependency>
             <groupId>com.sun.mail</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <version>2.1.2</version> <!-- Or the latest stable version -->
+            <artifactId>javax.mail</artifactId>
+            <version>1.6.2</version>
         </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-            <version>2.1.2</version> <!-- Or the latest stable version -->
-        </dependency>
-        <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>jakarta.activation</artifactId>
-            <version>2.1.2</version> <!-- Or the latest stable version -->
-        </dependency>
-        
         
         <!-- Spring Security for BCrypt password hashing -->
         <dependency>
