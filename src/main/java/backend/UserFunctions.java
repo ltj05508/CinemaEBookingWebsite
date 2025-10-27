@@ -24,7 +24,7 @@ public class UserFunctions {
      * @param password Plain text password (will be hashed)
      * @return Verification code if successful, null if error
      */
-    public String registerUser(String firstName, String lastName, String email, String password) {
+    public String registerUser(String firstName, String lastName, String email, String password, boolean marketingOptIn) {
         // Validate inputs
         if (firstName == null || firstName.trim().isEmpty() ||
             lastName == null || lastName.trim().isEmpty() ||
@@ -45,7 +45,7 @@ public class UserFunctions {
         String hashedPassword = passwordEncoder.encode(password);
         
         // Create user in database (state = Inactive)
-        String userId = UserDBFunctions.createUser(firstName, lastName, email, hashedPassword);
+        String userId = UserDBFunctions.createUser(firstName, lastName, email, hashedPassword, marketingOptIn);
         if (userId == null) {
             System.err.println("Failed to create user in database");
             return null;

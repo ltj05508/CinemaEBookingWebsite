@@ -9,19 +9,21 @@ public class User {
     private String email;
     private String password;
     private boolean loginStatus;
+    private boolean marketingOptIn;
 
 
     public User() {
     }
 
     public User(String userId, String firstName, String lastName, String email, String password,
-            boolean loginStatus) {
+            boolean loginStatus, boolean marketingOptIn) {
         this.userId = userId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
         this.loginStatus = loginStatus;
+        this.marketingOptIn = marketingOptIn;
     }
 
     public String getUserId() {return userId;}
@@ -30,6 +32,7 @@ public class User {
     public String getEmail() {return email;}
     public String getPassword() {return password;}
     public boolean getLoginStatus() {return loginStatus;}
+    public boolean getMarketingOptIn() {return marketingOptIn;}
 
     public void setUserId(String userId) {this.userId = userId;}
     public void setFirstName(String firstName) {this.firstName = firstName;}
@@ -37,6 +40,7 @@ public class User {
     public void setEmail(String email) {this.email = email;}
     public void setPassword(String password) {this.password = password;}
     public void setLoginStatus(boolean loginStatus) {this.loginStatus = loginStatus;}
+    public void setMarketingOptIn(boolean marketingOptIn) {this.marketingOptIn = marketingOptIn;}
 
     public String toJson() {
         Gson gson = new Gson();
@@ -51,7 +55,8 @@ public class User {
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
-                ", loginStatus=" + loginStatus +
+                ", loginStatus=" + loginStatus + '\'' +
+                ", marketingOptIn=" + marketingOptIn +
                 '}';
     }
 }

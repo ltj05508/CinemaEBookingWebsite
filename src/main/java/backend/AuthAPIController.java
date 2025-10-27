@@ -35,16 +35,17 @@ public class AuthAPIController {
             String lastName = request.get("lastName");
             String email = request.get("email");
             String password = request.get("password");
+            String marketingOptIn = request.get("marketingOptIn");
             
             // Validate inputs
-            if (firstName == null || lastName == null || email == null || password == null) {
+            if (firstName == null || lastName == null || email == null || password == null || marketingOptIn == null) {
                 response.put("success", false);
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
             
             // Register user
-            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password);
+            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password, Boolean.parseBoolean(marketingOptIn));
             
             if (verificationCode == null) {
                 response.put("success", false);

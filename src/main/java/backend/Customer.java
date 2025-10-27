@@ -11,8 +11,8 @@ public class Customer extends User{
     }
 
     public Customer(String userId, String firstName, String lastName, String email, String password,
-                    boolean loginStatus, String customerId, State state){
-        super(userId, firstName, lastName, email, password, loginStatus);
+                    boolean loginStatus, boolean marketingOptIn, String customerId, State state){
+        super(userId, firstName, lastName, email, password, loginStatus, marketingOptIn);
         this.customerId = customerId;
         this.state = state;
     }

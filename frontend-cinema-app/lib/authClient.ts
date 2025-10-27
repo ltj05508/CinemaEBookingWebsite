@@ -6,7 +6,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
  *  LOGIN
  * ========================= */
 export async function login(body: { email: string; password: string; remember?: boolean }) {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
+  const res = await fetch(`${API_BASE}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -27,7 +27,7 @@ export async function login(body: { email: string; password: string; remember?: 
  *  FORGOT PASSWORD
  * ========================= */
 export async function requestPasswordReset(body: { email: string }) {
-  const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+  const res = await fetch(`${API_BASE}/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -47,7 +47,7 @@ export async function requestPasswordReset(body: { email: string }) {
  *  RESET PASSWORD
  * ========================= */
 export async function resetPassword(body: { token: string; newPassword: string }) {
-  const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+  const res = await fetch(`${API_BASE}/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -75,7 +75,7 @@ export async function registerUser(body: {
   password: string;
   marketingOptIn?: boolean;
 }) {
-  const res = await fetch(`${API_BASE}/api/auth/signup`, {
+  const res = await fetch(`${API_BASE}/register`, { //signup ///api/auth/register
     method: "POST",
     headers: { "Content-Type": "application/json" },
     // no credentials here (user not logged in yet)
@@ -98,7 +98,7 @@ export async function registerUser(body: {
  *  Matches backend: verifyEmail(code) -> boolean success
  * ========================= */
 export async function verifyEmail(code: string) {
-  const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
+  const res = await fetch(`${API_BASE}/verify-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ code }),

@@ -19,7 +19,7 @@ public class UserDBFunctions {
      * @param hashedPassword BCrypt hashed password
      * @return The generated user_id, or null if error
      */
-    public static String createUser(String firstName, String lastName, String email, String hashedPassword) {
+    public static String createUser(String firstName, String lastName, String email, String hashedPassword, boolean marketingOptIn) {
         Connection conn = ConnectToDatabase.conn;
         String userId = UUID.randomUUID().toString();
         
@@ -32,7 +32,7 @@ public class UserDBFunctions {
             
             // Insert into Users table
             PreparedStatement userStmt = conn.prepareStatement(
-                "INSERT INTO Users (user_id, first_name, last_name, email, password, login_status) VALUES (?, ?, ?, ?, ?, ?)"
+                "INSERT INTO Users (user_id, first_name, last_name, email, password, login_status, marketing_opt_in) VALUES (?, ?, ?, ?, ?, ?, ?)"
             );
             userStmt.setString(1, userId);
             userStmt.setString(2, firstName);
@@ -40,6 +40,7 @@ public class UserDBFunctions {
             userStmt.setString(4, email);
             userStmt.setString(5, hashedPassword);
             userStmt.setBoolean(6, false); // not logged in yet
+            userStmt.setBoolean(7, marketingOptIn);
             userStmt.executeUpdate();
             
             // Insert into Customers table with Inactive state
@@ -82,7 +83,8 @@ public class UserDBFunctions {
                     rs.getString("last_name"),
                     rs.getString("email"),
                     rs.getString("password"),
-                    rs.getBoolean("login_status")
+                    rs.getBoolean("login_status"),
+                    rs.getBoolean("marketingOptIn")
                 );
             }
             

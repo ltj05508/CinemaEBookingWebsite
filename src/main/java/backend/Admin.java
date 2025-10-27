@@ -8,8 +8,8 @@ public class Admin extends User{
     }
 
     public Admin(String userId, String firstName, String lastName, String email, String password,
-                 boolean loginStatus, String adminId) {
-        super(userId, firstName, lastName, email, password, loginStatus);
+                 boolean loginStatus, boolean marketingOptIn, String adminId) {
+        super(userId, firstName, lastName, email, password, loginStatus, marketingOptIn);
         this.adminId = adminId;
     }
 
