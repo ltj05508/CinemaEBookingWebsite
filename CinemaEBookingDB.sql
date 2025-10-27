@@ -154,11 +154,50 @@ VALUES
 ('The Dark Knight', 'Action', 'PG-13', 'Batman sets out to dismantle organized crime in Gotham but finds himself facing the Joker.', 152, true, 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', 'https://www.youtube.com/watch?v=EXeTwQWrcwY'),
 ('Pulp Fiction', 'Crime', 'R', 'The lives of two mob hitmen, a boxer, and a pair of diner bandits intertwine in four tales.', 149, false, 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', 'https://www.youtube.com/watch?v=s7EdQ4FqbhY');
 
+INSERT INTO Theatres (theatre_id, name, address)
+VALUES
+(1, 'Theatre1', '12 Earnhart Lane'),
+(2, 'Theatre2', '213 Cricket Drive');
+
+INSERT INTO Showrooms (showroom_id, name, seat_count, theatre_id)
+VALUES
+(1, 'Showroom1', 50, 1),
+(2, 'Showroom2', 65, 1),
+(3, 'RoyalShowroom', 100, 2);
+
 -- Insert showtimes (only once per movie-time combination)
-INSERT INTO Showtimes (movie_id, showroom_id, show_time) VALUES
-(1, 1, '14:00:00'), (1, 1, '17:00:00'), (1, 1, '20:00:00'),
-(2, 1, '13:30:00'), (2, 1, '16:30:00'), (2, 1, '19:30:00'),
-(3, 2, '15:00:00'), (3, 2, '18:00:00'), (3, 2, '21:00:00'),
-(4, 2, '16:30:00'), (4, 2, '19:30:00'), (4, 2, '22:30:00'),
-(5, 3, '15:30:00'), (5, 3, '18:30:00'), (5, 3, '21:30:00'),
-(6, 3, '12:30:00'), (6, 3, '15:30:00'), (6, 3, '18:30:00');
+INSERT INTO Showtimes (movie_id, showroom_id, showtime) VALUES
+(1, '1', '14:00:00'), (1, '1', '17:00:00'), (1, '1', '20:00:00'),
+(2, '1', '13:30:00'), (2, '1', '16:30:00'), (2, '1', '19:30:00'),
+(3, '2', '15:00:00'), (3, '2', '18:00:00'), (3, '2', '21:00:00'),
+(4, '2', '16:30:00'), (4, '2', '19:30:00'), (4, '2', '22:30:00'),
+(5, '3', '15:30:00'), (5, '3', '18:30:00'), (5, '3', '21:30:00'),
+(6, '3', '12:30:00'), (6, '3', '15:30:00'), (6, '3', '18:30:00');
+
+INSERT INTO Users (user_id, first_name, last_name, email, password, login_status)
+VALUES
+('1', 'John', 'Smith', 'johnsmith22@gmail.com', 'password123', false),
+('2', 'Leo', 'Jahn', 'ljahn724@gmail.com', 'goodPassword!', false),
+('3', 'Ahdmin', 'Jones', 'ahdminjones123@gmail.com', 'strongPassword', false);
+
+INSERT INTO Customers (customer_id, state)
+VALUES
+('1', 'Active'),
+('2', 'Inactive');
+
+INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id)
+VALUES
+('1', '45 Brickroad Street', 'Atlanta', 'Georgia', '30033', 'United States', '1');
+
+INSERT INTO PaymentCards(card_id, card_number, expiration_date, customer_id, billing_address_id)
+VALUES
+('1', '12345678', '2030-10-11', '1', '1'),
+('2', '98765432', '2025-09-01', '1', '1');
+
+INSERT INTO Admins (admin_id)
+VALUES
+('3');
+
+INSERT INTO Promotions(promo_id, code, description, discount_percent, valid_from, valid_to)
+VALUES
+('1', 'promo1234', 'Test promotion for 15% off!', 15.00, '2025-10-01', '2025-12-25');
