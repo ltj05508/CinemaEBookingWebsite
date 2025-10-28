@@ -129,6 +129,7 @@ export async function getAuthStatus() {
   const res = await fetch(`${API_BASE}/api/auth/status`, {
     method: "GET",
     credentials: "include",
+    cache: "no-store", // 👈 ensure fresh status (avoid stale UI)
   });
   if (!res.ok) throw new Error("Failed to check auth status");
   return res.json();
