@@ -11,6 +11,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
 
+ 
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -50,11 +51,20 @@ export default function AccountPage() {
       </p>
 
       <div className="mt-8 grid gap-4">
-        <Link href="/profile" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
-          Manage profile (coming soon)
+        <Link href="/accountEdit" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
+          Manage profile 
         </Link>
         <Link href="/orders" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
-          Your orders (placeholder)
+          Your orders (Check On Orders)
+        </Link>
+        <Link href="/accountEdit" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
+          Saved Cards (Edit Payment Information)
+        </Link>
+        <Link href="/accountEdit" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
+          Adress Information (Edit Shipping and Billing Info)
+        </Link>
+        <Link href="/forgot-password" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
+          Change Password 
         </Link>
       </div>
     </main>
