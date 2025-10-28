@@ -21,7 +21,7 @@ export async function login(body: { email: string; password: string; remember?: 
     } catch {}
     throw new Error(message);
   }
-  window.dispatchEvent(new Event("auth-change"));
+  window.dispatchEvent(new Event("auth-changed"));
   return res.json();
 }
 
@@ -154,6 +154,6 @@ export async function logout() {
     } catch {}
     throw new Error(message);
   }
-  window.dispatchEvent(new Event("auth-change"));
+  window.dispatchEvent(new Event("auth-changed"));
   return true;
 }
