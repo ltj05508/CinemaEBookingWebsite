@@ -19,6 +19,7 @@ export default function LoginPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return; // avoid double submits
     setError(null);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -40,15 +41,16 @@ export default function LoginPage() {
         else localStorage.removeItem("lastLoginEmail");
       } catch {}
 
+      // Navigate based on role or redirect param
       if (role === "admin") router.replace("/admin");
       else if (redirect && redirect !== "/") router.replace(redirect);
       else router.replace("/account");
 
-      // Force revalidation and notify the app that auth changed
-      router.refresh();
+      // Notify the app and force revalidation so Navbar updates immediately
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("auth:changed"));
       }
+      router.refresh();
     } catch (err: any) {
       setError(err?.message || "Login failed. Check credentials and try again.");
     } finally {
