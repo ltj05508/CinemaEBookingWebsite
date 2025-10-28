@@ -14,8 +14,8 @@ import java.util.Properties;
 @Service
 public class EmailService {
     
-    @Value("${app.base.url}")
-    private String baseUrl;
+    //@Value("${app.base.url}")
+    private String baseUrl = "http://localhost:3000";
     
     /**
      * Send verification code to new user for email confirmation.

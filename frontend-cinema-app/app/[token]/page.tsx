@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useLocation } from "react-router-dom";
 import Link from "next/link";
 import { resetPassword } from "@/lib/authClient";
 
 export default function ResetPasswordPage() {
-    const { token } = useParams<{ token: string }>();
+    //const { token } = useParams<{ token: string }>();
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
     const router = useRouter();
 
     const [password, setPassword] = useState("");

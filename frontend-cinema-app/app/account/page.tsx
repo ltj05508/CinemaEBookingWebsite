@@ -61,7 +61,7 @@ export default function AccountPage() {
           Saved Cards (Edit Payment Information)
         </Link>
         <Link href="/accountEdit" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
-          Adress Information (Edit Shipping and Billing Info)
+          Address Information (Edit Shipping and Billing Info)
         </Link>
         <Link href="/forgot-password" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
           Change Password 

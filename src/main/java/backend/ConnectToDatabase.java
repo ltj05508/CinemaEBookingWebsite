@@ -37,7 +37,10 @@ public class ConnectToDatabase {
 
 
         UserFunctions uf = new UserFunctions(new EmailService());
-        uf.registerUser("John", "Snow", "ljahn724@gmail.com", "testingpass", true);
+
+        uf.login("ljahn724@gmail.com", "testingpass");
+
+        //uf.registerUser("John", "Snow", "ljahn724@gmail.com", "testingpass", true);
 
         //sendEmail("ljahn724@gmail.com", "Testing", "Hello,\n\nThis is a test email.");
         //EmailService es = new EmailService();
@@ -268,5 +271,31 @@ public class ConnectToDatabase {
             e.printStackTrace();
         }
         return movieInfo;
+    }
+
+    public static class LoginResult {
+        private String userId;
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String role; // "ADMIN" or "CUSTOMER"
+        private boolean success;
+
+        public LoginResult(String userId, String firstName, String lastName,
+                           String email, String role, boolean success) {
+            this.userId = userId;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.email = email;
+            this.role = role;
+            this.success = success;
+        }
+
+        public String getUserId() { return userId; }
+        public String getFirstName() { return firstName; }
+        public String getLastName() { return lastName; }
+        public String getEmail() { return email; }
+        public String getRole() { return role; }
+        public boolean isSuccess() { return success; }
     }
 }

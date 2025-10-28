@@ -425,4 +425,18 @@ public class UserDBFunctions {
             return false;
         }
     }
+
+    public static void setLoginStatus(boolean loginStatus, String email) {
+        Connection conn = ConnectToDatabase.conn;
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement("UPDATE Users SET login_status = ? WHERE email = ?");
+            stmt.setBoolean(1, loginStatus);
+            stmt.setString(2, email);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error setting login status: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

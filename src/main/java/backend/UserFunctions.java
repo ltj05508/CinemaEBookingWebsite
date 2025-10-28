@@ -111,22 +111,34 @@ public class UserFunctions {
             System.err.println("User not found");
             return null;
         }
+
+        System.out.println("1");
         
         // Verify password
         if (!passwordEncoder.matches(password, user.getPassword())) {
             System.err.println("Invalid password");
             return null;
         }
+
+        System.out.println("2");
         
         // Check if customer is active
         if (!UserDBFunctions.isCustomerActive(user.getUserId())) {
             System.err.println("Account not activated. Please verify your email.");
             return null;
         }
+
+        System.out.println("3");
         
         // Check if admin
         boolean isAdmin = UserDBFunctions.isAdmin(user.getUserId());
         String role = isAdmin ? "ADMIN" : "CUSTOMER";
+
+        System.out.println("4");
+
+        UserDBFunctions.setLoginStatus(true, email);
+
+        System.out.println("5");
         
         // Return login result
         return new LoginResult(user.getUserId(), user.getFirstName(), user.getLastName(), 
@@ -167,6 +179,8 @@ public class UserFunctions {
             System.err.println("Password must be at least 8 characters");
             return false;
         }
+
+        System.err.println("Reset Token in resetPassword: " + token);
         
         // Validate token and get email
         String email = CodeManager.validateResetToken(token);

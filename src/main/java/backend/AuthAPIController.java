@@ -149,6 +149,8 @@ public class AuthAPIController {
                 response.put("message", "Email and password are required");
                 return ResponseEntity.badRequest().body(response);
             }
+
+            System.out.println("10");
             
             // Attempt login
             UserFunctions.LoginResult loginResult = userFunctions.login(email, password);
