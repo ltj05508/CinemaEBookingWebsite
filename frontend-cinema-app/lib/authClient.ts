@@ -21,6 +21,7 @@ export async function login(body: { email: string; password: string; remember?: 
     } catch {}
     throw new Error(message);
   }
+  window.dispatchEvent(new Event("auth-change"));
   return res.json();
 }
 
@@ -129,7 +130,7 @@ export async function getAuthStatus() {
   const res = await fetch(`${API_BASE}/api/auth/status`, {
     method: "GET",
     credentials: "include",
-    cache: "no-store", // 👈 ensure fresh status (avoid stale UI)
+    cache: "no-store", // ensure fresh status (avoid stale UI)
   });
   if (!res.ok) throw new Error("Failed to check auth status");
   return res.json();
@@ -153,5 +154,6 @@ export async function logout() {
     } catch {}
     throw new Error(message);
   }
+  window.dispatchEvent(new Event("auth-change"));
   return true;
 }

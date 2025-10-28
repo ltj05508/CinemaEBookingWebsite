@@ -197,6 +197,7 @@ public class AuthAPIController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            System.err.println("In logout");
             // Invalidate session
             session.invalidate();
             

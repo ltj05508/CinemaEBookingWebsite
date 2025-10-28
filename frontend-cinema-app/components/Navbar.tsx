@@ -1,3 +1,4 @@
+/*
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,7 +17,12 @@ export default function Navbar() {
       } catch (error) {
         console.error("Error checking auth status:", error);
       }
+
+      
     }
+
+    window.addEventListener("auth-change", checkLoginStatus);
+      return () => window.removeEventListener("auth-change", checkLoginStatus);
 
     checkLoginStatus();
   }, []);
@@ -46,11 +52,12 @@ export default function Navbar() {
     </header>
   );
 }
+  */
 
 
 
 
-/*
+
 import Link from "next/link";
 
 export default function Navbar() {
@@ -76,4 +83,4 @@ export default function Navbar() {
     </header>
   );
 }
-  */
+

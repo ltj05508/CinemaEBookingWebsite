@@ -3,13 +3,22 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthStatus } from "@/lib/authClient";
+import { getAuthStatus, logout } from "@/lib/authClient";
 import Link from "next/link";
 
 export default function AccountPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
+
+  async function handleLogout() {
+    try {
+      //await logout(); // call logout() from authClient.ts
+      router.push("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
 
  
   useEffect(() => {
@@ -66,6 +75,12 @@ export default function AccountPage() {
         <Link href="/forgot-password" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
           Change Password 
         </Link>
+        <button
+          onClick={handleLogout}
+          className="rounded-xl border px-4 py-3 hover:bg-gray-50 text-left"
+        >
+          Logout
+        </button>
       </div>
     </main>
   );
