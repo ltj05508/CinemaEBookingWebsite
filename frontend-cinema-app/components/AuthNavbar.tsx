@@ -10,18 +10,33 @@ export default function Navbar() {
   const [auth, setAuth] = useState<{ loggedIn: boolean; user?: any } | null>(null);
   const [busy, setBusy] = useState(false);
 
+  async function loadStatus() {
+    try {
+      const data = await getAuthStatus();
+      setAuth(data);
+    } catch {
+      setAuth({ loggedIn: false });
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
     (async () => {
-      try {
-        const data = await getAuthStatus();
-        if (mounted) setAuth(data);
-      } catch {
-        if (mounted) setAuth({ loggedIn: false });
-      }
+      if (mounted) await loadStatus();
     })();
+
+    const onAuthChanged = () => loadStatus();
+    const onVisible = () => {
+      if (!document.hidden) loadStatus();
+    };
+
+    window.addEventListener("auth:changed", onAuthChanged);
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       mounted = false;
+      window.removeEventListener("auth:changed", onAuthChanged);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -31,7 +46,11 @@ export default function Navbar() {
     try {
       await logout();
       setAuth({ loggedIn: false });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("auth:changed"));
+      }
       router.push("/login");
+      router.refresh();
     } finally {
       setBusy(false);
     }
@@ -75,3 +94,4 @@ export default function Navbar() {
     </header>
   );
 }
+
