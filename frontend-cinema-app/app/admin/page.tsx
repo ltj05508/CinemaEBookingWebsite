@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAuthStatus } from "@/lib/authClient";
 
-import AuthNavbar from "@/components/AuthNavbar";
+import Navbar from "@/components/Navbar"; // ✅ use the unified auth-aware navbar
 import { getMovies, searchMovies, filterMoviesByGenre } from "@/lib/data";
 import type { Movie } from "@/types/cinema";
 import MovieCard from "@/components/MovieCard";
@@ -32,7 +32,7 @@ export default function AdminPage() {
     let mounted = true;
     (async () => {
       try {
-        const status = await getAuthStatus();
+        const status = await getAuthStatus(); // cache: "no-store" in client
         if (!status?.loggedIn) {
           router.replace(`/login?redirect=${encodeURIComponent("/admin")}`);
           return;
@@ -90,7 +90,7 @@ export default function AdminPage() {
   if (checkingAuth) {
     return (
       <>
-        <AuthNavbar />
+        <Navbar />
         <main className="mx-auto max-w-6xl w-full px-4 py-8">
           <p className="opacity-80">Checking access…</p>
         </main>
@@ -102,7 +102,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <AuthNavbar />
+      <Navbar />
 
       <main className="mx-auto max-w-6xl w-full px-4 py-8 space-y-8">
         {/* Toolbar (non-functional) + search/filter */}
@@ -172,6 +172,7 @@ export default function AdminPage() {
         </section>
       </main>
     </>
-    );
+  );
 }
+
 
