@@ -317,4 +317,78 @@ public class AuthAPIController {
         
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Get the current user's addresses.
+     * GET /api/auth/addresses
+     */
+    @GetMapping("/addresses")
+    public ResponseEntity<Map<String, Object>> getAddresses(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+        if (loggedIn == null || !loggedIn) {
+            response.put("success", false);
+            response.put("message", "Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        String userId = (String) session.getAttribute("userId");
+        try {
+            Address addr = UserDBFunctions.getCustomerAddress(userId);
+            if (addr == null) {
+                response.put("success", true);
+                response.put("addresses", new java.util.ArrayList<>());
+            } else {
+                response.put("success", true);
+                response.put("addresses", java.util.List.of(addr));
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get the current user's payment cards (masked).
+     * GET /api/auth/payment-cards
+     */
+    @GetMapping("/payment-cards")
+    public ResponseEntity<Map<String, Object>> getPaymentCards(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+        if (loggedIn == null || !loggedIn) {
+            response.put("success", false);
+            response.put("message", "Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        String userId = (String) session.getAttribute("userId");
+        try {
+            java.util.List<PaymentCard> cards = UserDBFunctions.getCustomerPaymentCards(userId);
+            java.util.List<java.util.Map<String, Object>> out = new java.util.ArrayList<>();
+            for (PaymentCard c : cards) {
+                String num = c.getCardNumber() == null ? "" : c.getCardNumber();
+                String last4 = num.length() >= 4 ? num.substring(num.length() - 4) : num;
+                String masked = "**** **** **** " + last4;
+                java.util.Map<String, Object> m = new java.util.HashMap<>();
+                m.put("cardId", c.getCardId());
+                m.put("masked", masked);
+                m.put("expirationDate", c.getExpirationDate() != null ? c.getExpirationDate().toString() : null);
+                m.put("billingAddressId", c.getBillingAddressId());
+                out.add(m);
+            }
+
+            response.put("success", true);
+            response.put("cards", out);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 }
