@@ -2,6 +2,10 @@ export type Profile = { firstName: string; lastName: string; email?: string };
 export type Address = { line1: string; line2?: string; city: string; state: string; zip: string };
 export type BillingAddress = Address;
 export type Card = { cardholderName: string; last4: string; brand?: string; expMonth: string; expYear: string };
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
+
+import { getAuthStatus } from "@/lib/authClient";
+
 
 // Storage helpers
 const K = {
@@ -25,7 +29,11 @@ function set<T>(key: string, val: T) {
 export const AccountAPI = {
   // Profile
   async getProfile(): Promise<Profile> {
-    return get<Profile>(K.profile, { firstName: "", lastName: "", email: "you@example.com" });
+    const data = await getAuthStatus();
+    //if (!data.ok) throw new Error("Failed to check auth status in accountClient");
+    return get<Profile>(K.profile, { firstName: data?.user?.firstName || "testFirst", lastName: data?.user?.lastName || "testLast", email: data?.user?.email || "testEmail"});
+    //const data = <Profile>(K.profile, {firstName: data?.firstName, lastName: data?.lastName, email: data?.email })
+    //return get<Profile>(K.profile, { firstName: data?.firstName, lastName: data?.lastName, email: data?.email });
   },
   async updateProfile(p: Profile) {
     set(K.profile, p);
