@@ -37,7 +37,9 @@ export default function AdminPage() {
           router.replace(`/login?redirect=${encodeURIComponent("/admin")}`);
           return;
         }
-        const role = status?.user?.role ?? "user";
+        //const role = status?.user?.role ?? "user";
+        const rawRole = status?.user?.role;
+        const role = rawRole != null ? String(rawRole).toLowerCase() : "user";
         if (role !== "admin") {
           router.replace("/account");
           return;

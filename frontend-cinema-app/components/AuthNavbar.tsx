@@ -54,6 +54,9 @@ export default function Navbar() {
     } finally {
       setBusy(false);
     }
+
+    router.push("/login");
+    router.refresh();
   }
 
   return (

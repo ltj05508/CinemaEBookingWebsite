@@ -127,6 +127,7 @@ export async function verifyEmail(code: string) {
  *  Returns { loggedIn: boolean, user?: {...} }
  * ========================= */
 export async function getAuthStatus() {
+  const ts = Date.now(); // cache buster
   const res = await fetch(`${API_BASE}/api/auth/status`, {
     method: "GET",
     credentials: "include",

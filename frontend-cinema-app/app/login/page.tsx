@@ -34,7 +34,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await login({ email, password, remember });
-      const role = res?.user?.role ?? "user";
+      //const role = res?.user?.role ?? "user";
+      const rawRole = res?.user?.role;
+      const role = rawRole != null ? String(rawRole).toLowerCase() : "user";
 
       try {
         if (remember) localStorage.setItem("lastLoginEmail", email);

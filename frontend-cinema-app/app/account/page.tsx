@@ -75,12 +75,6 @@ export default function AccountPage() {
         <Link href="/forgot-password" className="rounded-xl border px-4 py-3 hover:bg-gray-50">
           Change Password 
         </Link>
-        <button
-          onClick={handleLogout}
-          className="rounded-xl border px-4 py-3 hover:bg-gray-50 text-left"
-        >
-          Logout
-        </button>
       </div>
     </main>
   );
