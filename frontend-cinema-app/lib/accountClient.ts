@@ -30,40 +30,22 @@ export const AccountAPI = {
   // Profile
   async getProfile(): Promise<Profile> {
     try {
-      const response = await fetch(`${API_BASE}/api/profile`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-      
-      const data = await response.json();
-      if (data.success && data.user) {
+      // Use auth status endpoint which we know works
+      const authData = await getAuthStatus();
+      if (authData?.loggedIn && authData?.user) {
         const profile = {
-          firstName: data.user.firstName || "",
-          lastName: data.user.lastName || "",
-          email: data.user.email || ""
+          firstName: authData.user.firstName || "",
+          lastName: authData.user.lastName || "",
+          email: authData.user.email || ""
         };
-        // Cache in localStorage
         set(K.profile, profile);
         return profile;
       }
       
-      // Fallback to auth status if profile endpoint fails
-      const authData = await getAuthStatus();
-      return {
-        firstName: authData?.user?.firstName || "",
-        lastName: authData?.user?.lastName || "",
-        email: authData?.user?.email || ""
-      };
+      // Not logged in, return empty
+      return { firstName: "", lastName: "", email: "" };
     } catch (error) {
       console.error('Error fetching profile:', error);
-      // Return cached data or empty
       return get<Profile>(K.profile, { firstName: "", lastName: "", email: "" });
     }
   },
