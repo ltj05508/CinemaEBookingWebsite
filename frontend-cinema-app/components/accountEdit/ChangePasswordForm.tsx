@@ -15,7 +15,7 @@ export default function ChangePasswordForm() {
     setSaving(true);
     try {
       await AccountAPI.changePassword(oldPassword, newPassword);
-      alert("Password changed (demo)");
+      alert("Password changed");
       setOld(""); setNew(""); setConfirm("");
     } catch (e:any) {
       alert(e?.message || "Failed to change password");

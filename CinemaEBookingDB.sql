@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS Addresses (
 
 CREATE TABLE IF NOT EXISTS PaymentCards (
     card_id         VARCHAR(50) PRIMARY KEY,
-    card_number     VARCHAR(20) NOT NULL,
+    card_number     VARCHAR(50) NOT NULL,
     expiration_date DATE NOT NULL,
     customer_id     VARCHAR(50) NOT NULL,
     billing_address_id VARCHAR(50),
