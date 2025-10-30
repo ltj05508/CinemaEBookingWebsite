@@ -72,36 +72,6 @@ export const AccountAPI = {
       return get<Profile>(K.profile, { firstName: "", lastName: "", email: "" });
     }
   },
-  async updateProfile(p: Profile) {
-    try {
-      const response = await fetch(`${API_BASE}/api/profile`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: p.firstName,
-          lastName: p.lastName
-        }),
-      });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update profile');
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        set(K.profile, p);
-        return { ok: true };
-      }
-      throw new Error(data.message || 'Update failed');
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      throw error;
-    }
-  },
 
   // Shipping Address
   async getAddress(): Promise<Address> {
