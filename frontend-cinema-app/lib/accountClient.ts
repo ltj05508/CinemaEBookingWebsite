@@ -219,10 +219,26 @@ export const AccountAPI = {
 
   // Password (demo only)
   async changePassword(oldPassword: string, newPassword: string) {
-    const current = get<string>(K.pwd, "demo");
-    if (current !== oldPassword) throw new Error("Current password is incorrect (demo)");
-    set(K.pwd, newPassword);
-    return { ok: true };
+    const res = await fetch(`${API_BASE}/api/auth/changePassword`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        currentPassword: oldPassword,
+        newPassword: newPassword,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || "Failed to change password");
+    }
+
+    const data = await res.json();
+    return { ok: true, data };
   },
 };
 

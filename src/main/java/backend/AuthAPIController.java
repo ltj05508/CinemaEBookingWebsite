@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -19,6 +20,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class AuthAPIController {
+    
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     @Autowired
     private UserFunctions userFunctions;
@@ -38,28 +41,42 @@ public class AuthAPIController {
     }
 
     @PostMapping("/updateUser")
-    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody Map<String, String> request, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
         try {
+            // Check if logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "Not logged in");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            // Get email from session (don't trust client-provided email)
+            String email = (String) session.getAttribute("email");
             String firstName = request.get("firstName");
             String lastName = request.get("lastName");
-            String email = request.get("email");
-            //String password = request.get("password");
-            //String marketingOptIn = request.get("marketingOptIn");
 
             // Validate inputs
-            if (firstName == null || lastName == null || email == null) {
+            if (firstName == null || lastName == null) {
                 response.put("success", false);
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            boolean holder;
-
-            User tempUser = UserDBFunctions.findUserByEmail(email);
-
-            userFunctions.updateProfile(email, firstName, lastName, tempUser.getPassword(), tempUser.getPassword());
+            // Update profile in database using UserDBFunctions
+            boolean updated = UserDBFunctions.updateProfile(email, firstName, lastName);
+            
+            if (!updated) {
+                response.put("success", false);
+                response.put("message", "Failed to update profile");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+            
+            // Update session attributes
+            session.setAttribute("firstName", firstName);
+            session.setAttribute("lastName", lastName);
 
             /*
             if (marketingOptIn.equals("0")) {
@@ -73,6 +90,77 @@ public class AuthAPIController {
             response.put("message", "Update successful! Please check your email for verification code.");
             response.put("email", email);
 
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * Change user password.
+     * POST /api/auth/changePassword
+     * Body: { "currentPassword": "oldpass123", "newPassword": "newpass456" }
+     */
+    @PostMapping("/changePassword")
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> request, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Check if logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "Not logged in");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            // Get email from session
+            String email = (String) session.getAttribute("email");
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+
+            // Validate inputs
+            if (currentPassword == null || newPassword == null || newPassword.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Missing required fields");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            if (newPassword.length() < 8) {
+                response.put("success", false);
+                response.put("message", "Password must be at least 8 characters");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Verify current password
+            User user = UserDBFunctions.findUserByEmail(email);
+            if (user == null) {
+                response.put("success", false);
+                response.put("message", "User not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                response.put("success", false);
+                response.put("message", "Current password is incorrect");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            // Hash new password and update
+            String hashedPassword = passwordEncoder.encode(newPassword);
+            boolean updated = UserDBFunctions.updatePassword(email, hashedPassword);
+            
+            if (!updated) {
+                response.put("success", false);
+                response.put("message", "Failed to update password");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            }
+
+            response.put("success", true);
+            response.put("message", "Password changed successfully");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
