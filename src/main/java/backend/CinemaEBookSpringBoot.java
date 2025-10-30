@@ -8,7 +8,7 @@ public class CinemaEBookSpringBoot {
     public static void main(String[] args) {
         // Initialize encryption key for payment card encryption
         // In production, this should come from environment variables or secure key management
-        EncryptionUtil.setEncryptionKey("CinemaEBookKey123"); // Must be 16 characters for AES-128
+        EncryptionUtil.setEncryptionKey("CinemaEBookKey16"); // Must be exactly 16 characters for AES-128
         
         SpringApplication.run(CinemaEBookSpringBoot.class, args);
         System.out.println("🎬 Cinema E-Booking API is running on http://localhost:8080");
