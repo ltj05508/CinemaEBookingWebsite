@@ -29,24 +29,142 @@ function set<T>(key: string, val: T) {
 export const AccountAPI = {
   // Profile
   async getProfile(): Promise<Profile> {
-    const data = await getAuthStatus();
-    //if (!data.ok) throw new Error("Failed to check auth status in accountClient");
-    return get<Profile>(K.profile, { firstName: data?.user?.firstName || "testFirst", lastName: data?.user?.lastName || "testLast", email: data?.user?.email || "testEmail"});
-    //const data = <Profile>(K.profile, {firstName: data?.firstName, lastName: data?.lastName, email: data?.email })
-    //return get<Profile>(K.profile, { firstName: data?.firstName, lastName: data?.lastName, email: data?.email });
+    try {
+      const response = await fetch(`${API_BASE}/api/profile`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.user) {
+        const profile = {
+          firstName: data.user.firstName || "",
+          lastName: data.user.lastName || "",
+          email: data.user.email || ""
+        };
+        // Cache in localStorage
+        set(K.profile, profile);
+        return profile;
+      }
+      
+      // Fallback to auth status if profile endpoint fails
+      const authData = await getAuthStatus();
+      return {
+        firstName: authData?.user?.firstName || "",
+        lastName: authData?.user?.lastName || "",
+        email: authData?.user?.email || ""
+      };
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      // Return cached data or empty
+      return get<Profile>(K.profile, { firstName: "", lastName: "", email: "" });
+    }
   },
   async updateProfile(p: Profile) {
-    set(K.profile, p);
-    return { ok: true };
+    try {
+      const response = await fetch(`${API_BASE}/api/profile`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to update profile');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        set(K.profile, p);
+        return { ok: true };
+      }
+      throw new Error(data.message || 'Update failed');
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
   },
 
   // Shipping Address
   async getAddress(): Promise<Address> {
-    return get<Address>(K.addr, { line1: "", line2: "", city: "", state: "", zip: "" });
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/addresses`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch address');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.addresses && data.addresses.length > 0) {
+        const addr = data.addresses[0];
+        const address = {
+          line1: addr.street || "",
+          line2: "",
+          city: addr.city || "",
+          state: addr.state || "",
+          zip: addr.postalCode || ""
+        };
+        set(K.addr, address);
+        return address;
+      }
+      
+      return get<Address>(K.addr, { line1: "", line2: "", city: "", state: "", zip: "" });
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return get<Address>(K.addr, { line1: "", line2: "", city: "", state: "", zip: "" });
+    }
   },
   async updateAddress(a: Address) {
-    set(K.addr, a);
-    return { ok: true };
+    try {
+      const response = await fetch(`${API_BASE}/api/profile/address`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          street: a.line1,
+          city: a.city,
+          state: a.state,
+          postalCode: a.zip,
+          country: "USA"
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to update address');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        set(K.addr, a);
+        return { ok: true };
+      }
+      throw new Error(data.message || 'Update failed');
+    } catch (error: any) {
+      console.error('Error updating address:', error);
+      throw error;
+    }
   },
 
   // Billing Address
@@ -60,20 +178,68 @@ export const AccountAPI = {
 
   // Cards (store masked meta only)
   async listCards(): Promise<Card[]> {
-    return get<Card[]>(K.cards, []);
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/payment-cards`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch cards');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.cards) {
+        const cards = data.cards.map((c: any) => ({
+          cardholderName: "Cardholder",  // Backend doesn't return this
+          last4: c.masked.slice(-4),
+          brand: "Card",
+          expMonth: c.expirationDate ? new Date(c.expirationDate).getMonth() + 1 + "" : "01",
+          expYear: c.expirationDate ? new Date(c.expirationDate).getFullYear() + "" : "2025"
+        }));
+        set(K.cards, cards);
+        return cards;
+      }
+      
+      return get<Card[]>(K.cards, []);
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+      return get<Card[]>(K.cards, []);
+    }
   },
   async addCard(input: { cardholderName: string; number: string; expMonth: string; expYear: string }) {
-    const last4 = input.number.replace(/\s+/g, "").slice(-4) || "0000";
-    const brand = detectBrand(input.number);
-    const next: Card[] = [...get<Card[]>(K.cards, []), {
-      cardholderName: input.cardholderName,
-      last4,
-      brand,
-      expMonth: input.expMonth,
-      expYear: input.expYear,
-    }];
-    set(K.cards, next);
-    return { ok: true };
+    try {
+      const response = await fetch(`${API_BASE}/api/profile/payment-card`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardNumber: input.number.replace(/\s+/g, ""),
+          expirationDate: `${input.expYear}-${input.expMonth.padStart(2, '0')}-01`
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to add card');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        // Refresh the card list
+        await this.listCards();
+        return { ok: true };
+      }
+      throw new Error(data.message || 'Add card failed');
+    } catch (error: any) {
+      console.error('Error adding card:', error);
+      throw error;
+    }
   },
 
   // Password (demo only)
