@@ -247,7 +247,8 @@ public class UserFunctions {
         
         // Update name if provided
         if (firstName != null && lastName != null) {
-            boolean profileUpdated = UserDBFunctions.updateProfile(email, firstName, lastName);
+            // Keep existing marketingOptIn value when updating profile
+            boolean profileUpdated = UserDBFunctions.updateProfile(email, firstName, lastName, user.getMarketingOptIn());
             if (!profileUpdated) {
                 System.err.println("Failed to update profile");
                 return false;

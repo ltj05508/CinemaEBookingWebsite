@@ -1,4 +1,4 @@
-export type Profile = { firstName: string; lastName: string; email?: string };
+export type Profile = { firstName: string; lastName: string; email?: string; marketingOptIn?: boolean };
 export type Address = { line1: string; line2?: string; city: string; state: string; zip: string };
 export type BillingAddress = Address;
 export type Card = { cardholderName: string; last4: string; brand?: string; expMonth: string; expYear: string };
@@ -59,17 +59,18 @@ export const AccountAPI = {
         const profile = {
           firstName: authData.user.firstName || "",
           lastName: authData.user.lastName || "",
-          email: authData.user.email || ""
+          email: authData.user.email || "",
+          marketingOptIn: authData.user.marketingOptIn || false
         };
         set(K.profile, profile);
         return profile;
       }
       
       // Not logged in, return empty
-      return { firstName: "", lastName: "", email: "" };
+      return { firstName: "", lastName: "", email: "", marketingOptIn: false };
     } catch (error) {
       console.error('Error fetching profile:', error);
-      return get<Profile>(K.profile, { firstName: "", lastName: "", email: "" });
+      return get<Profile>(K.profile, { firstName: "", lastName: "", email: "", marketingOptIn: false });
     }
   },
 

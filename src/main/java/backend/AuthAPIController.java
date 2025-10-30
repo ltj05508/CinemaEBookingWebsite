@@ -57,6 +57,7 @@ public class AuthAPIController {
             String email = (String) session.getAttribute("email");
             String firstName = request.get("firstName");
             String lastName = request.get("lastName");
+            String marketingOptInStr = request.get("marketingOptIn");
 
             // Validate inputs
             if (firstName == null || lastName == null) {
@@ -65,8 +66,11 @@ public class AuthAPIController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Parse marketingOptIn (default to false if not provided)
+            boolean marketingOptIn = "true".equalsIgnoreCase(marketingOptInStr);
+
             // Update profile in database using UserDBFunctions
-            boolean updated = UserDBFunctions.updateProfile(email, firstName, lastName);
+            boolean updated = UserDBFunctions.updateProfile(email, firstName, lastName, marketingOptIn);
             
             if (!updated) {
                 response.put("success", false);
@@ -77,14 +81,6 @@ public class AuthAPIController {
             // Update session attributes
             session.setAttribute("firstName", firstName);
             session.setAttribute("lastName", lastName);
-
-            /*
-            if (marketingOptIn.equals("0")) {
-                holder = false;
-            } else {
-                holder = true;
-            }
-            */
 
             response.put("success", true);
             response.put("message", "Update successful! Please check your email for verification code.");
@@ -187,23 +183,23 @@ public class AuthAPIController {
             String marketingOptIn = request.get("marketingOptIn");
             
             // Validate inputs
-            if (firstName == null || lastName == null || email == null || password == null || marketingOptIn == null) {
+            if (firstName == null || lastName == null || email == null || password == null) {
                 response.put("success", false);
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            boolean holder;
-
-            if (marketingOptIn.equals("0")) {
-                holder = false;
-            } else {
-                holder = true;
+            // Parse marketingOptIn - handle both string ("0"/"1") and boolean (true/false)
+            boolean marketingOptInValue = false;
+            if (marketingOptIn != null) {
+                if (marketingOptIn.equals("1") || marketingOptIn.equalsIgnoreCase("true")) {
+                    marketingOptInValue = true;
+                }
             }
 
             //userFunctions = new UserFunctions(new EmailService());
             // Register user
-            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password, holder);
+            String verificationCode = userFunctions.registerUser(firstName, lastName, email, password, marketingOptInValue);
             
             if (verificationCode == null) {
                 response.put("success", false);
@@ -436,14 +432,27 @@ public class AuthAPIController {
         Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
         
         if (loggedIn != null && loggedIn) {
+            String email = (String) session.getAttribute("email");
+            
+            // Fetch the full user from the database to get marketingOptIn
+            User user = UserDBFunctions.findUserByEmail(email);
+            
             response.put("loggedIn", true);
-            response.put("user", Map.of(
-                "userId", session.getAttribute("userId"),
-                "firstName", session.getAttribute("firstName"),
-                "lastName", session.getAttribute("lastName"),
-                "email", session.getAttribute("email"),
-                "role", session.getAttribute("role")
-            ));
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("userId", session.getAttribute("userId"));
+            userInfo.put("firstName", session.getAttribute("firstName"));
+            userInfo.put("lastName", session.getAttribute("lastName"));
+            userInfo.put("email", session.getAttribute("email"));
+            userInfo.put("role", session.getAttribute("role"));
+            
+            // Add marketingOptIn from database
+            if (user != null) {
+                userInfo.put("marketingOptIn", user.getMarketingOptIn());
+            } else {
+                userInfo.put("marketingOptIn", false);
+            }
+            
+            response.put("user", userInfo);
         } else {
             response.put("loggedIn", false);
         }

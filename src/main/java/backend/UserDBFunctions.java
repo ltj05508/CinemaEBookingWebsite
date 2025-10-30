@@ -213,16 +213,17 @@ public class UserDBFunctions {
      * @param lastName New last name
      * @return true if successful, false otherwise
      */
-    public static boolean updateProfile(String email, String firstName, String lastName) {
+    public static boolean updateProfile(String email, String firstName, String lastName, boolean marketingOptIn) {
         Connection conn = ConnectToDatabase.conn;
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE Users SET first_name = ?, last_name = ? WHERE email = ?"
+                "UPDATE Users SET first_name = ?, last_name = ?, marketing_opt_in = ? WHERE email = ?"
             );
             stmt.setString(1, firstName);
             stmt.setString(2, lastName);
-            stmt.setString(3, email);
+            stmt.setBoolean(3, marketingOptIn);
+            stmt.setString(4, email);
             int rows = stmt.executeUpdate();
             
             return rows > 0;

@@ -4,12 +4,14 @@ import Section from "./Section"; import Row from "./Row"; import Input from "./I
 import { AccountAPI, type Profile } from "@/lib/accountClient";
 
 export default function ProfileForm() {
-  const [profile, setProfile] = useState<Profile>({ firstName: "", lastName: "", email: "" });
+  const [profile, setProfile] = useState<Profile>({ firstName: "", lastName: "", email: "", marketingOptIn: false });
   const [saving, setSaving] = useState(false);
-  const [marketingOptIn, setMarketingOptIn] = useState(false); 
 
-
-  useEffect(() => { AccountAPI.getProfile().then(setProfile); }, []);
+  useEffect(() => { 
+    AccountAPI.getProfile().then((p) => {
+      setProfile(p);
+    }); 
+  }, []);
 
   async function onSave() {
     setSaving(true);
@@ -40,8 +42,8 @@ export default function ProfileForm() {
           <input
             type="checkbox"
             className="size-4 mt-0.5"
-            checked={marketingOptIn}
-            onChange={(e) => setMarketingOptIn(e.target.checked)}
+            checked={profile.marketingOptIn || false}
+            onChange={(e) => setProfile({ ...profile, marketingOptIn: e.target.checked })}
           />
           <span>
             Send me promotions, special offers, and updates about new releases.
