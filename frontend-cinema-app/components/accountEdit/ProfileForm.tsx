@@ -6,6 +6,8 @@ import { AccountAPI, type Profile } from "@/lib/accountClient";
 export default function ProfileForm() {
   const [profile, setProfile] = useState<Profile>({ firstName: "", lastName: "", email: "" });
   const [saving, setSaving] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false); 
+
 
   useEffect(() => { AccountAPI.getProfile().then(setProfile); }, []);
 
@@ -32,6 +34,20 @@ export default function ProfileForm() {
         <div className="mb-1">Email</div>
         <Input value={profile.email || ""} readOnly placeholder="you@example.com"/>
       </label>
+
+         {/* Optional marketing opt-in */}
+      <label className="inline-flex items-start gap-3 text-sm select-none cursor-pointer">
+          <input
+            type="checkbox"
+            className="size-4 mt-0.5"
+            checked={marketingOptIn}
+            onChange={(e) => setMarketingOptIn(e.target.checked)}
+          />
+          <span>
+            Send me promotions, special offers, and updates about new releases.
+          </span>
+        </label>
+
       <Button onClick={onSave} disabled={saving}>{saving ? "Saving..." : "Save profile"}</Button>
     </Section>
   );
