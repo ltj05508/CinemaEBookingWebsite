@@ -335,6 +335,7 @@ public class UserDBFunctions {
         List<PaymentCard> cards = new ArrayList<>();
         
         try {
+            System.out.println("DEBUG: getCustomerPaymentCards called with customerId = " + customerId);
             PreparedStatement stmt = conn.prepareStatement(
                 "SELECT card_id, card_number, expiration_date, billing_address_id FROM PaymentCards WHERE customer_id = ?"
             );
@@ -351,6 +352,8 @@ public class UserDBFunctions {
                 );
                 cards.add(card);
             }
+            
+            System.out.println("DEBUG: Found " + cards.size() + " cards for customer " + customerId);
             
         } catch (SQLException e) {
             System.err.println("Error getting payment cards: " + e.getMessage());
@@ -375,6 +378,8 @@ public class UserDBFunctions {
         try {
             // Check card limit (max 4 cards)
             List<PaymentCard> existingCards = getCustomerPaymentCards(customerId);
+            System.out.println("DEBUG: customerId = " + customerId);
+            System.out.println("DEBUG: existing cards count = " + existingCards.size());
             if (existingCards.size() >= 4) {
                 System.err.println("Customer already has 4 payment cards (maximum allowed)");
                 return null;

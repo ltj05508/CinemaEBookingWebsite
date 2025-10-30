@@ -144,11 +144,14 @@ export const AccountAPI = {
 
   // Billing Address
   async getBilling(): Promise<BillingAddress> {
-    return get<BillingAddress>(K.bill, { line1: "", line2: "", city: "", state: "", zip: "" });
+    // For now, billing address is the same as regular address
+    // In future, could have separate billing address endpoint
+    return this.getAddress();
   },
   async updateBilling(a: BillingAddress) {
-    set(K.bill, a);
-    return { ok: true };
+    // For now, update the same address (since billing uses the same address)
+    // In future, could have separate billing address
+    return this.updateAddress(a);
   },
 
   // Cards (store masked meta only)
@@ -187,7 +190,7 @@ export const AccountAPI = {
   },
   async addCard(input: { cardholderName: string; number: string; expMonth: string; expYear: string }) {
     try {
-      const response = await fetch(`${API_BASE}/api/profile/payment-card`, {
+      const response = await fetch(`${API_BASE}/api/profile/cards`, {
         method: 'POST',
         credentials: 'include',
         headers: {
