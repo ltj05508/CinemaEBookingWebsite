@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import Section from "./Section"; import Row from "./Row"; import Input from "./Input"; import Button from "./Button";
 import { AccountAPI } from "@/lib/accountClient";
+import BillingAddressForm from "@/components/accountEdit/BillingForm";
 
 export default function PaymentCardForm() {
   const [cardholderName, setName] = useState("");
@@ -50,6 +51,10 @@ export default function PaymentCardForm() {
         </label>
       </Row>
       <Button onClick={onAdd} disabled={saving}>{saving ? "Adding..." : "Add card"}</Button>
+
+      <div className="grid gap-6">
+        <BillingAddressForm />
+      </div>
 
       {existing.length > 0 && (
         <div className="pt-4">

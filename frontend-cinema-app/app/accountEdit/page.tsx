@@ -21,22 +21,9 @@ export default function AccountEditPage() {
       <div className="grid gap-6">
         <ProfileForm />
         <AddressForm />
-        <BillingAddressForm />
         <PaymentCardForm />
         <ChangePasswordForm />
 
-                {/* Optional marketing opt-in */}
-        <label className="inline-flex items-start gap-3 text-sm select-none cursor-pointer">
-          <input
-            type="checkbox"
-            className="size-4 mt-0.5"
-            checked={marketingOptIn}
-            onChange={(e) => setMarketingOptIn(e.target.checked)}
-          />
-          <span>
-            Send me promotions, special offers, and updates about new releases.
-          </span>
-        </label>
       </div>
       
 
