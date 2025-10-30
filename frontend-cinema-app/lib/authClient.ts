@@ -158,3 +158,14 @@ export async function logout() {
   window.dispatchEvent(new Event("auth-changed"));
   return true;
 }
+
+export async function getPaymentCards() {
+  const ts = Date.now(); // cache buster
+  const res = await fetch(`${API_BASE}/api/auth/payment-cards`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store", // ensure fresh status (avoid stale UI)
+  });
+  if (!res.ok) throw new Error("Failed to check auth status");
+  return res.json();
+}

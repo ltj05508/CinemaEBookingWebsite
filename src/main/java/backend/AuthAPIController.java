@@ -36,6 +36,51 @@ public class AuthAPIController {
             return ResponseEntity.internalServerError().body("{\"error\":\"Failed to retrieve movie: " + e.getMessage() + "\"}");
         }
     }
+
+    @PostMapping("/updateUser")
+    public ResponseEntity<Map<String, Object>> updateUser(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String firstName = request.get("firstName");
+            String lastName = request.get("lastName");
+            String email = request.get("email");
+            //String password = request.get("password");
+            //String marketingOptIn = request.get("marketingOptIn");
+
+            // Validate inputs
+            if (firstName == null || lastName == null || email == null) {
+                response.put("success", false);
+                response.put("message", "Missing required fields");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            boolean holder;
+
+            User tempUser = UserDBFunctions.findUserByEmail(email);
+
+            userFunctions.updateProfile(email, firstName, lastName, tempUser.getPassword(), tempUser.getPassword());
+
+            /*
+            if (marketingOptIn.equals("0")) {
+                holder = false;
+            } else {
+                holder = true;
+            }
+            */
+
+            response.put("success", true);
+            response.put("message", "Update successful! Please check your email for verification code.");
+            response.put("email", email);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
     
     /**
      * Register a new user.
@@ -375,10 +420,12 @@ public class AuthAPIController {
                 String last4 = num.length() >= 4 ? num.substring(num.length() - 4) : num;
                 String masked = "**** **** **** " + last4;
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                m.put("cardId", c.getCardId());
-                m.put("masked", masked);
-                m.put("expirationDate", c.getExpirationDate() != null ? c.getExpirationDate().toString() : null);
-                m.put("billingAddressId", c.getBillingAddressId());
+                //m.put("cardId", c.getCardId());
+                //m.put("cardNumber", num);
+                m.put("last4", last4);
+                //m.put("masked", masked);
+                m.put("expirationMonth", c.getExpirationDate() != null ? c.getExpirationDate().toString() : null);
+                //m.put("billingAddressId", c.getBillingAddressId());
                 out.add(m);
             }
 

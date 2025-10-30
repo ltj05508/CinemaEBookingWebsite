@@ -28,6 +28,29 @@ function set<T>(key: string, val: T) {
 
 export const AccountAPI = {
   // Profile
+
+  async updateProfile(p: Profile) {
+    const res = await fetch(`${API_BASE}/api/auth/updateUser`, {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(p), // send your profile data
+    });
+  
+    if (!res.ok) {
+      // handle error (maybe throw or return error message)
+      const err = await res.text();
+      throw new Error(`Failed to update profile: ${err}`);
+    }
+  
+    // parse response if needed
+    const data = await res.json();
+    return { ok: true, data };
+  },
+  
   async getProfile(): Promise<Profile> {
     try {
       // Use auth status endpoint which we know works
