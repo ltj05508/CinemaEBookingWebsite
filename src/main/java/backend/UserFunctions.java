@@ -343,12 +343,36 @@ public class UserFunctions {
     }
     
     /**
+     * Save customer's billing address.
+     * @param customerId Customer's ID
+     * @param street Street address
+     * @param city City
+     * @param state State
+     * @param postalCode Postal code
+     * @param country Country
+     * @return true if successful, false otherwise
+     */
+    public boolean saveBillingAddress(String customerId, String street, String city, 
+                                      String state, String postalCode, String country) {
+        return UserDBFunctions.saveCustomerAddressByType(customerId, street, city, state, postalCode, country, "billing");
+    }
+    
+    /**
      * Get customer's address.
      * @param customerId Customer's ID
      * @return Address object or null if not found
      */
     public Address getAddress(String customerId) {
         return UserDBFunctions.getCustomerAddress(customerId);
+    }
+    
+    /**
+     * Get customer's billing address.
+     * @param customerId Customer's ID
+     * @return Address object or null if not found
+     */
+    public Address getBillingAddress(String customerId) {
+        return UserDBFunctions.getCustomerAddressByType(customerId, "billing");
     }
     
     /**

@@ -217,6 +217,92 @@ public class ProfileAPIController {
     }
     
     /**
+     * Get customer's billing address.
+     * GET /api/profile/billing-address
+     */
+    @GetMapping("/billing-address")
+    public ResponseEntity<Map<String, Object>> getBillingAddress(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Check if logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "Not logged in");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            Address billingAddress = userFunctions.getBillingAddress(userId);
+            
+            response.put("success", true);
+            response.put("address", billingAddress);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
+     * Update customer's billing address.
+     * PUT /api/profile/billing-address
+     * Body: { "street": "123 Main St", "city": "Atlanta", "state": "GA", "postalCode": "30301", "country": "USA" }
+     */
+    @PutMapping("/billing-address")
+    public ResponseEntity<Map<String, Object>> updateBillingAddress(@RequestBody Map<String, String> request,
+                                                                     HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Check if logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "Not logged in");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            String street = request.get("street");
+            String city = request.get("city");
+            String state = request.get("state");
+            String postalCode = request.get("postalCode");
+            String country = request.get("country");
+            
+            // Validate inputs
+            if (street == null || city == null || state == null || postalCode == null || country == null) {
+                response.put("success", false);
+                response.put("message", "All address fields are required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Save billing address
+            boolean saved = userFunctions.saveBillingAddress(userId, street, city, state, postalCode, country);
+            
+            if (!saved) {
+                response.put("success", false);
+                response.put("message", "Failed to save billing address");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            response.put("success", true);
+            response.put("message", "Billing address saved successfully");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    /**
      * Get all payment cards for customer.
      * GET /api/profile/cards
      */

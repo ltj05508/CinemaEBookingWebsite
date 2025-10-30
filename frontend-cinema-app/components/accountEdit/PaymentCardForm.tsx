@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import Section from "./Section"; import Row from "./Row"; import Input from "./Input"; import Button from "./Button";
 import { AccountAPI } from "@/lib/accountClient";
+import BillingAddressForm from "./BillingForm";
 
 export default function PaymentCardForm() {
   const [cardholderName, setName] = useState("");
@@ -33,23 +34,27 @@ export default function PaymentCardForm() {
     <Section title="Payment method" desc="Add a new card (demo uses local storage; numbers are not sent anywhere).">
       <label className="text-sm">
         <div className="mb-1">Cardholder name</div>
-        <Input value={cardholderName} onChange={(e)=>setName(e.target.value)}/>
+        <Input value={cardholderName} onChange={(e)=>setName(e.target.value)} autoComplete="cc-name"/>
       </label>
       <label className="text-sm">
         <div className="mb-1">Card number</div>
-        <Input value={number} onChange={(e)=>setNumber(e.target.value)} placeholder="1234 5678 9012 3456"/>
+        <Input value={number} onChange={(e)=>setNumber(e.target.value)} placeholder="1234 5678 9012 3456" autoComplete="cc-number"/>
       </label>
       <Row>
         <label className="text-sm">
           <div className="mb-1">Exp. month</div>
-          <Input value={expMonth} onChange={(e)=>setMonth(e.target.value)} placeholder="MM"/>
+          <Input value={expMonth} onChange={(e)=>setMonth(e.target.value)} placeholder="MM" autoComplete="cc-exp-month"/>
         </label>
         <label className="text-sm">
           <div className="mb-1">Exp. year</div>
-          <Input value={expYear} onChange={(e)=>setYear(e.target.value)} placeholder="YYYY"/>
+          <Input value={expYear} onChange={(e)=>setYear(e.target.value)} placeholder="YYYY" autoComplete="cc-exp-year"/>
         </label>
       </Row>
       <Button onClick={onAdd} disabled={saving}>{saving ? "Adding..." : "Add card"}</Button>
+
+      <div className="grid gap-6 mt-6">
+        <BillingAddressForm />
+      </div>
 
       {existing.length > 0 && (
         <div className="pt-4">

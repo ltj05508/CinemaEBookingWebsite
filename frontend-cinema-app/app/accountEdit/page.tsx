@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import ProfileForm from "@/components/accountEdit/ProfileForm";
 import AddressForm from "@/components/accountEdit/AddressForm";
-import BillingAddressForm from "@/components/accountEdit/BillingForm";
 import PaymentCardForm from "@/components/accountEdit/PaymentCardForm";
 import ChangePasswordForm from "@/components/accountEdit/ChangePasswordForm";
 import { useState } from "react";
@@ -21,7 +20,6 @@ export default function AccountEditPage() {
       <div className="grid gap-6">
         <ProfileForm />
         <AddressForm />
-        <BillingAddressForm />
         <PaymentCardForm />
         <ChangePasswordForm />
 

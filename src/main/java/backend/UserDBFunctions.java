@@ -235,7 +235,7 @@ public class UserDBFunctions {
     }
     
     /**
-     * Get or create address for a customer. Users can only have ONE address.
+     * Get shipping address for a customer (the main address NOT linked to a payment card).
      * @param customerId Customer's ID
      * @return Address object if exists, null otherwise
      */
@@ -243,10 +243,15 @@ public class UserDBFunctions {
         Connection conn = ConnectToDatabase.conn;
         
         try {
+            // Get the address NOT being used as a billing address
             PreparedStatement stmt = conn.prepareStatement(
-                "SELECT address_id, street, city, state, postal_code, country FROM Addresses WHERE customer_id = ?"
+                "SELECT address_id, street, city, state, postal_code, country FROM Addresses " +
+                "WHERE customer_id = ? AND address_id NOT IN " +
+                "(SELECT billing_address_id FROM PaymentCards WHERE customer_id = ? AND billing_address_id IS NOT NULL) " +
+                "LIMIT 1"
             );
             stmt.setString(1, customerId);
+            stmt.setString(2, customerId);
             ResultSet rs = stmt.executeQuery();
             
             if (rs.next()) {
@@ -271,7 +276,81 @@ public class UserDBFunctions {
     }
     
     /**
-     * Update or create customer's address (only ONE address allowed per user).
+     * Get billing address for a customer (from PaymentCard's billing_address_id or standalone).
+     * @param customerId Customer's ID
+     * @return Address object if exists, null otherwise
+     */
+    public static Address getCustomerAddressByType(String customerId, String addressType) {
+        if ("billing".equals(addressType)) {
+            Connection conn = ConnectToDatabase.conn;
+            
+            try {
+                // First try to get billing address linked to payment card
+                PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT a.address_id, a.street, a.city, a.state, a.postal_code, a.country " +
+                    "FROM Addresses a " +
+                    "JOIN PaymentCards pc ON a.address_id = pc.billing_address_id " +
+                    "WHERE pc.customer_id = ? LIMIT 1"
+                );
+                stmt.setString(1, customerId);
+                ResultSet rs = stmt.executeQuery();
+                
+                if (rs.next()) {
+                    Address address = new Address();
+                    address.setAddressId(rs.getString("address_id"));
+                    address.setStreet(rs.getString("street"));
+                    address.setCity(rs.getString("city"));
+                    address.setState(rs.getString("state"));
+                    address.setPostalCode(rs.getString("postal_code"));
+                    address.setCountry(rs.getString("country"));
+                    address.setCustomerId(customerId);
+                    return address;
+                }
+                
+                // If no card-linked billing address, look for standalone billing address
+                // (an address that's not the shipping address and not linked to any card)
+                PreparedStatement standaloneStmt = conn.prepareStatement(
+                    "SELECT a.address_id, a.street, a.city, a.state, a.postal_code, a.country " +
+                    "FROM Addresses a " +
+                    "WHERE a.customer_id = ? " +
+                    "AND a.address_id NOT IN (" +
+                    "  SELECT billing_address_id FROM PaymentCards WHERE customer_id = ? AND billing_address_id IS NOT NULL" +
+                    ") " +
+                    "AND a.address_id != (SELECT address_id FROM Addresses WHERE customer_id = ? LIMIT 1) " +
+                    "LIMIT 1"
+                );
+                standaloneStmt.setString(1, customerId);
+                standaloneStmt.setString(2, customerId);
+                standaloneStmt.setString(3, customerId);
+                ResultSet rsStandalone = standaloneStmt.executeQuery();
+                
+                if (rsStandalone.next()) {
+                    Address address = new Address();
+                    address.setAddressId(rsStandalone.getString("address_id"));
+                    address.setStreet(rsStandalone.getString("street"));
+                    address.setCity(rsStandalone.getString("city"));
+                    address.setState(rsStandalone.getString("state"));
+                    address.setPostalCode(rsStandalone.getString("postal_code"));
+                    address.setCountry(rsStandalone.getString("country"));
+                    address.setCustomerId(customerId);
+                    return address;
+                }
+                
+                return null;
+                
+            } catch (SQLException e) {
+                System.err.println("Error getting billing address: " + e.getMessage());
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            // For shipping or any other type, get the main address
+            return getCustomerAddress(customerId);
+        }
+    }
+    
+    /**
+     * Update or create customer's shipping address.
      * @param customerId Customer's ID
      * @param street Street address
      * @param city City
@@ -285,26 +364,28 @@ public class UserDBFunctions {
         Connection conn = ConnectToDatabase.conn;
         
         try {
-            // Check if address already exists
+            // Check if they have a shipping address (not used as billing)
             Address existing = getCustomerAddress(customerId);
             
             if (existing != null) {
-                // Update existing address
+                // Update existing shipping address
                 PreparedStatement stmt = conn.prepareStatement(
-                    "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? WHERE customer_id = ?"
+                    "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
+                    "WHERE address_id = ?"
                 );
                 stmt.setString(1, street);
                 stmt.setString(2, city);
                 stmt.setString(3, state);
                 stmt.setString(4, postalCode);
                 stmt.setString(5, country);
-                stmt.setString(6, customerId);
+                stmt.setString(6, existing.getAddressId());
                 stmt.executeUpdate();
             } else {
-                // Insert new address
+                // Create new shipping address
                 String addressId = UUID.randomUUID().toString();
                 PreparedStatement stmt = conn.prepareStatement(
-                    "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)"
                 );
                 stmt.setString(1, addressId);
                 stmt.setString(2, street);
@@ -322,6 +403,124 @@ public class UserDBFunctions {
             System.err.println("Error saving customer address: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+    
+    /**
+     * Save billing address - creates NEW address row and links to payment card (or creates standalone if no card yet).
+     * @param customerId Customer's ID
+     * @param street Street address
+     * @param city City
+     * @param state State
+     * @param postalCode Postal code
+     * @param country Country
+     * @param addressType "billing" (kept for compatibility but ignored)
+     * @return true if successful, false otherwise
+     */
+    public static boolean saveCustomerAddressByType(String customerId, String street, String city, 
+                                                     String state, String postalCode, String country, String addressType) {
+        if ("billing".equals(addressType)) {
+            Connection conn = ConnectToDatabase.conn;
+            
+            try {
+                // First, check if there's an existing billing address
+                Address existingBillingAddr = getCustomerAddressByType(customerId, "billing");
+                
+                if (existingBillingAddr != null) {
+                    // Update existing billing address
+                    PreparedStatement updateStmt = conn.prepareStatement(
+                        "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
+                        "WHERE address_id = ?"
+                    );
+                    updateStmt.setString(1, street);
+                    updateStmt.setString(2, city);
+                    updateStmt.setString(3, state);
+                    updateStmt.setString(4, postalCode);
+                    updateStmt.setString(5, country);
+                    updateStmt.setString(6, existingBillingAddr.getAddressId());
+                    updateStmt.executeUpdate();
+                    return true;
+                }
+                
+                // No existing billing address, check if they have a payment card
+                PreparedStatement cardStmt = conn.prepareStatement(
+                    "SELECT card_id, billing_address_id FROM PaymentCards WHERE customer_id = ? LIMIT 1"
+                );
+                cardStmt.setString(1, customerId);
+                ResultSet cardRs = cardStmt.executeQuery();
+                
+                if (cardRs.next()) {
+                    // They have a card, create address and link it
+                    String cardId = cardRs.getString("card_id");
+                    String existingBillingAddressId = cardRs.getString("billing_address_id");
+                    
+                    if (existingBillingAddressId != null) {
+                        // Update existing billing address linked to card
+                        PreparedStatement updateStmt = conn.prepareStatement(
+                            "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
+                            "WHERE address_id = ?"
+                        );
+                        updateStmt.setString(1, street);
+                        updateStmt.setString(2, city);
+                        updateStmt.setString(3, state);
+                        updateStmt.setString(4, postalCode);
+                        updateStmt.setString(5, country);
+                        updateStmt.setString(6, existingBillingAddressId);
+                        updateStmt.executeUpdate();
+                    } else {
+                        // Create NEW address row for billing and link to card
+                        String newAddressId = UUID.randomUUID().toString();
+                        PreparedStatement insertStmt = conn.prepareStatement(
+                            "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)"
+                        );
+                        insertStmt.setString(1, newAddressId);
+                        insertStmt.setString(2, street);
+                        insertStmt.setString(3, city);
+                        insertStmt.setString(4, state);
+                        insertStmt.setString(5, postalCode);
+                        insertStmt.setString(6, country);
+                        insertStmt.setString(7, customerId);
+                        insertStmt.executeUpdate();
+                        
+                        // Link new address to payment card
+                        PreparedStatement linkStmt = conn.prepareStatement(
+                            "UPDATE PaymentCards SET billing_address_id = ? WHERE card_id = ?"
+                        );
+                        linkStmt.setString(1, newAddressId);
+                        linkStmt.setString(2, cardId);
+                        linkStmt.executeUpdate();
+                    }
+                } else {
+                    // No card yet - just create a standalone billing address
+                    // When they add a card later, we'll link it automatically
+                    String newAddressId = UUID.randomUUID().toString();
+                    PreparedStatement insertStmt = conn.prepareStatement(
+                        "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    );
+                    insertStmt.setString(1, newAddressId);
+                    insertStmt.setString(2, street);
+                    insertStmt.setString(3, city);
+                    insertStmt.setString(4, state);
+                    insertStmt.setString(5, postalCode);
+                    insertStmt.setString(6, country);
+                    insertStmt.setString(7, customerId);
+                    insertStmt.executeUpdate();
+                    
+                    System.out.println("Created standalone billing address (no card to link yet)");
+                }
+                
+                return true;
+                
+            } catch (SQLException e) {
+                System.err.println("Error saving billing address: " + e.getMessage());
+                e.printStackTrace();
+                return false;
+            }
+        } else {
+            // For shipping, use regular saveCustomerAddress
+            return saveCustomerAddress(customerId, street, city, state, postalCode, country);
         }
     }
     
@@ -365,6 +564,7 @@ public class UserDBFunctions {
     
     /**
      * Add a payment card for a customer. Maximum 4 cards allowed.
+     * Automatically links any standalone billing address to the new card.
      * @param customerId Customer's ID
      * @param encryptedCardNumber Encrypted card number
      * @param expirationDate Card expiration date
@@ -385,6 +585,15 @@ public class UserDBFunctions {
                 return null;
             }
             
+            // If no billing address provided, try to find standalone billing address
+            if (billingAddressId == null) {
+                Address standaloneBilling = getCustomerAddressByType(customerId, "billing");
+                if (standaloneBilling != null) {
+                    billingAddressId = standaloneBilling.getAddressId();
+                    System.out.println("DEBUG: Auto-linking standalone billing address: " + billingAddressId);
+                }
+            }
+            
             String cardId = UUID.randomUUID().toString();
             PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO PaymentCards (card_id, card_number, expiration_date, customer_id, billing_address_id) VALUES (?, ?, ?, ?, ?)"
@@ -395,6 +604,8 @@ public class UserDBFunctions {
             stmt.setString(4, customerId);
             stmt.setString(5, billingAddressId);
             stmt.executeUpdate();
+            
+            System.out.println("DEBUG: Payment card added successfully with ID: " + cardId);
             
             return cardId;
             

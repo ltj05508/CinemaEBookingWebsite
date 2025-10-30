@@ -144,14 +144,73 @@ export const AccountAPI = {
 
   // Billing Address
   async getBilling(): Promise<BillingAddress> {
-    // For now, billing address is the same as regular address
-    // In future, could have separate billing address endpoint
-    return this.getAddress();
+    try {
+      const response = await fetch(`${API_BASE}/api/profile/billing-address`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to get billing address');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.address) {
+        const addr: BillingAddress = {
+          line1: data.address.street || "",
+          city: data.address.city || "",
+          state: data.address.state || "",
+          zip: data.address.postalCode || ""
+        };
+        set(K.bill, addr);
+        return addr;
+      }
+      
+      // Return empty address if none exists
+      const emptyAddr: BillingAddress = { line1: "", city: "", state: "", zip: "" };
+      set(K.bill, emptyAddr);
+      return emptyAddr;
+    } catch (error: any) {
+      console.error('Error getting billing address:', error);
+      return get(K.bill, { line1: "", city: "", state: "", zip: "" });
+    }
   },
   async updateBilling(a: BillingAddress) {
-    // For now, update the same address (since billing uses the same address)
-    // In future, could have separate billing address
-    return this.updateAddress(a);
+    try {
+      const response = await fetch(`${API_BASE}/api/profile/billing-address`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          street: a.line1,
+          city: a.city,
+          state: a.state,
+          postalCode: a.zip,
+          country: "USA"
+        }),
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to update billing address');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        set(K.bill, a);
+        return { ok: true };
+      }
+      throw new Error(data.message || 'Update failed');
+    } catch (error: any) {
+      console.error('Error updating billing address:', error);
+      throw error;
+    }
   },
 
   // Cards (store masked meta only)
@@ -173,7 +232,7 @@ export const AccountAPI = {
       if (data.success && data.cards) {
         const cards = data.cards.map((c: any) => ({
           cardholderName: "Cardholder",  // Backend doesn't return this
-          last4: c.masked.slice(-4),
+          last4: c.cardNumber ? c.cardNumber.slice(-4) : "****",
           brand: "Card",
           expMonth: c.expirationDate ? new Date(c.expirationDate).getMonth() + 1 + "" : "01",
           expYear: c.expirationDate ? new Date(c.expirationDate).getFullYear() + "" : "2025"
@@ -190,6 +249,16 @@ export const AccountAPI = {
   },
   async addCard(input: { cardholderName: string; number: string; expMonth: string; expYear: string }) {
     try {
+      // Get billing address to link to the card
+      let billingAddressId = null;
+      try {
+        const billingAddr = await this.getBilling();
+        // If billing address exists and has data, we'll need to get its ID from backend
+        // For now, we'll pass null and let backend handle it
+      } catch (e) {
+        console.log('No billing address to link');
+      }
+      
       const response = await fetch(`${API_BASE}/api/profile/cards`, {
         method: 'POST',
         credentials: 'include',
@@ -198,7 +267,8 @@ export const AccountAPI = {
         },
         body: JSON.stringify({
           cardNumber: input.number.replace(/\s+/g, ""),
-          expirationDate: `${input.expYear}-${input.expMonth.padStart(2, '0')}-01`
+          expirationDate: `${input.expYear}-${input.expMonth.padStart(2, '0')}-01`,
+          billingAddressId: billingAddressId
         }),
       });
       
