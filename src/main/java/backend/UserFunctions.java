@@ -212,7 +212,9 @@ public class UserFunctions {
      * @return true if successful, false otherwise
      */
     public boolean updateProfile(String email, String firstName, String lastName, 
-                                 String currentPassword, String newPassword) {
+                                 String currentPassword, String newPassword, boolean marketingOptIn) {
+        String[] changes = {"", "", ""};
+
         // Find user
         User user = UserDBFunctions.findUserByEmail(email);
         if (user == null) {
@@ -221,7 +223,7 @@ public class UserFunctions {
         }
         
         // If changing password, verify current password
-        if (newPassword != null && !newPassword.isEmpty()) {
+        if (newPassword != null && !newPassword.isEmpty() && !newPassword.equals(currentPassword)) {
             if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
                 System.err.println("Current password is incorrect");
                 return false;
@@ -231,7 +233,8 @@ public class UserFunctions {
                 System.err.println("New password must be at least 8 characters");
                 return false;
             }
-            
+
+
             // Hash and update password
             String hashedPassword = passwordEncoder.encode(newPassword);
             boolean passwordUpdated = UserDBFunctions.updatePassword(email, hashedPassword);
@@ -239,16 +242,16 @@ public class UserFunctions {
                 System.err.println("Failed to update password");
                 return false;
             }
-            
-            // Send notification
-            emailService.sendProfileChangeNotification(email, user.getFirstName(), 
-                "Your password has been changed.");
+            changes[0] = "Your password has been changed.\n";
         }
         
         // Update name if provided
         if (firstName != null && lastName != null) {
             // Keep existing marketingOptIn value when updating profile
-            boolean profileUpdated = UserDBFunctions.updateProfile(email, firstName, lastName, user.getMarketingOptIn());
+            if (marketingOptIn != user.getMarketingOptIn()) {
+                changes[1] = "Your marketing permissions have been changed.\n";
+            }
+            boolean profileUpdated = UserDBFunctions.updateProfile(email, firstName, lastName, marketingOptIn);
             if (!profileUpdated) {
                 System.err.println("Failed to update profile");
                 return false;
@@ -256,11 +259,18 @@ public class UserFunctions {
             
             // Send notification if name changed
             if (!firstName.equals(user.getFirstName()) || !lastName.equals(user.getLastName())) {
-                emailService.sendProfileChangeNotification(email, firstName, 
-                    "Your name has been updated to " + firstName + " " + lastName);
+                changes[2] = "Your name has been updated to " + firstName + " " + lastName + ".\n";
             }
         }
-        
+
+        String emailMessage = "";
+        for(int i = 0; i < changes.length; i++) {
+            emailMessage += changes[i];
+        }
+
+        if (!emailMessage.isEmpty()) {
+            emailService.sendProfileChangeNotification(email, user.getFirstName(), emailMessage);
+        }
         return true;
     }
     

@@ -103,10 +103,13 @@ public class ProfileAPIController {
             String lastName = request.get("lastName");
             String currentPassword = request.get("currentPassword");
             String newPassword = request.get("newPassword");
+            String marketingOptInStr = request.get("marketingOptIn");
+
+            boolean marketingOptIn = "true".equalsIgnoreCase(marketingOptInStr);
             
             // Update profile
             boolean updated = userFunctions.updateProfile(email, firstName, lastName, 
-                                                         currentPassword, newPassword);
+                                                         currentPassword, newPassword, marketingOptIn);
             
             if (!updated) {
                 response.put("success", false);

@@ -70,7 +70,10 @@ public class AuthAPIController {
             boolean marketingOptIn = "true".equalsIgnoreCase(marketingOptInStr);
 
             // Update profile in database using UserDBFunctions
-            boolean updated = UserDBFunctions.updateProfile(email, firstName, lastName, marketingOptIn);
+            //boolean updated = UserDBFunctions.updateProfile(email, firstName, lastName, marketingOptIn);
+
+            boolean updated = userFunctions.updateProfile(email, firstName, lastName,
+                    (String) session.getAttribute("password"), (String) session.getAttribute("password"), marketingOptIn);
             
             if (!updated) {
                 response.put("success", false);

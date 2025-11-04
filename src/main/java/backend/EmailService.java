@@ -98,7 +98,7 @@ public class EmailService {
         String body = String.format(
             "Hello %s,\n\n" +
             "Your profile has been updated:\n" +
-            "%s\n\n" +
+            "%s\n" +
             "If you did not make this change, please contact support immediately.\n\n" +
             "Best regards,\n" +
             "Cinema E-Booking Team",

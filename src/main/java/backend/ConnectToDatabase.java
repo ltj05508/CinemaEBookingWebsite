@@ -34,11 +34,20 @@ public class ConnectToDatabase {
 
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
+        List<String> cards = new ArrayList<>();
+        cards.add("1");
+        cards.add("2");
+        cards.add("3");
+        System.out.println(cards.size());
 
+        //UserFunctions uf = new UserFunctions(new EmailService());
 
-        UserFunctions uf = new UserFunctions(new EmailService());
+        //User myUser = UserDBFunctions.findUserByEmail("ljahn724@gmail.com");
+        //System.out.println(myUser);
 
-        uf.login("ljahn724@gmail.com", "testingpass");
+        //uf.updateProfile("ljahn724@gmail.com", "Oel", "Nhaj", "testingpass", "testingpass");
+
+        //uf.login("ljahn724@gmail.com", "testingpass");
 
         //uf.registerUser("John", "Snow", "ljahn724@gmail.com", "testingpass", true);
 
