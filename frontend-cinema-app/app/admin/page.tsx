@@ -1,4 +1,3 @@
-// app/admin/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,142 +23,197 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Admin auth gate (role normalized)
   useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
         const status = await getAuthStatus();
+        const role = String(status?.user?.role ?? "").toLowerCase();
+        const ok = !!status?.loggedIn && role === "admin";
+        setAllowed(ok);
         if (!status?.loggedIn) {
           router.replace(`/login?redirect=${encodeURIComponent("/admin")}`);
           return;
         }
-        const rawRole = status?.user?.role;
-        const role = rawRole != null ? String(rawRole).toLowerCase() : "user";
-        if (role !== "admin") {
+        if (!ok) {
           router.replace("/account");
           return;
         }
-        if (mounted) setAllowed(true);
-      } catch {
-        router.replace(`/login?redirect=${encodeURIComponent("/admin")}`);
       } finally {
-        if (mounted) setCheckingAuth(false);
+        setCheckingAuth(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, [router]);
 
-  // Fetch movies (same as Home)
   useEffect(() => {
     if (!allowed) return;
-    async function fetchMovies() {
+    (async () => {
       setLoading(true);
       setError(null);
       try {
-        let results: Movie[];
-        if (q && q.trim() && genre && genre !== "ALL") {
-          const searchResults = await searchMovies(q.trim());
-          results = searchResults.filter((m) => m.genres.includes(genre));
-        } else if (q && q.trim()) {
-          results = await searchMovies(q.trim());
-        } else if (genre && genre !== "ALL") {
-          results = await filterMoviesByGenre(genre);
+        let list: Movie[] = [];
+        if (q && q.trim().length > 0) {
+          list = await searchMovies(q.trim());
+        } else if (genre && genre.trim().length > 0) {
+          list = await filterMoviesByGenre(genre.trim());
         } else {
-          results = await getMovies();
+          list = await getMovies();
         }
-        setMovies(results);
-      } catch (err) {
-        console.error("Error loading movies:", err);
-        setError("Failed to load movies. Please try again.");
+        setMovies(list ?? []);
+      } catch (e: any) {
+        setError(e?.message || "Failed to load movies.");
       } finally {
         setLoading(false);
       }
-    }
-    fetchMovies();
+    })();
   }, [allowed, q, genre]);
-
-  const running = movies.filter((m) => m.status === "RUNNING");
-  const coming = movies.filter((m) => m.status === "COMING_SOON");
-  const featuredTrailer = running[0]?.trailerUrl;
 
   if (checkingAuth) {
     return (
-      <main className="mx-auto max-w-6xl w-full px-4 py-8">
-        <p className="opacity-80">Checking access…</p>
-      </main>
+        <main className="mx-auto max-w-5xl px-4 py-6">
+          <p>Checking permissions…</p>
+        </main>
     );
   }
 
-  if (!allowed) return null;
+  if (!allowed) {
+    return (
+        <main className="mx-auto max-w-5xl px-4 py-6">
+          <h1 className="text-2xl font-semibold">Admin</h1>
+          <p className="text-red-600 mt-2">You are not authorized to view this page.</p>
+        </main>
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-6xl w-full px-4 py-8 space-y-8">
-      {/* Toolbar (non-functional) + search/filter */}
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <button className="rounded-xl border px-4 py-2 hover:bg-gray-50">Add Movie</button>
-          <button className="rounded-xl border px-4 py-2 hover:bg-gray-50">Delete Movie</button>
-          <button className="rounded-xl border px-4 py-2 hover:bg-gray-50">Update Movie Information</button>
-          <button className="rounded-xl border px-4 py-2 hover:bg-gray-50">Add Promotions</button>
-
+      <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+        <header className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold">Admin Portal</h1>
           <div className="ml-auto w-full sm:w-auto">
             <SearchFilterBar />
           </div>
-        </div>
-      </section>
+        </header>
 
-      {featuredTrailer ? (
+        {/* Main menu as grouped cards. "Add Movie" and "Schedule a Movie" live under Manage Movies. */}
+        <nav className="grid gap-4 sm:grid-cols-2">
+          {/* Manage Movies Group */}
+          <section className="rounded-2xl border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Manage Movies</h2>
+              <button
+                  className="rounded-xl border px-3 py-1 hover:bg-gray-50"
+                  onClick={() => router.push("/admin/movies")}
+                  aria-label="Open Manage Movies"
+                  title="Open Manage Movies"
+              >
+                Open
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <button
+                  className="rounded-xl border px-3 py-2 text-left hover:bg-gray-50"
+                  onClick={() => router.push("/admin/movies/new")}
+              >
+                ➕ Add Movie
+              </button>
+              <button
+                  className="rounded-xl border px-3 py-2 text-left hover:bg-gray-50"
+                  onClick={() => router.push("/admin/showtimes/new")}
+              >
+                🗓️ Schedule a Movie
+              </button>
+            </div>
+          </section>
+
+          {/* Manage Promotions */}
+          <section className="rounded-2xl border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Manage Promotions</h2>
+              <button
+                  className="rounded-xl border px-3 py-1 hover:bg-gray-50"
+                  onClick={() => router.push("/admin/promotions")}
+                  aria-label="Open Manage Promotions"
+                  title="Open Manage Promotions"
+              >
+                Open
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Create promotion codes and (optionally) email subscribed users.
+            </p>
+          </section>
+
+          {/* Manage Users */}
+          <section className="rounded-2xl border p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Manage Users</h2>
+              <button
+                  className="rounded-xl border px-3 py-1 hover:bg-gray-50"
+                  onClick={() => router.push("/admin/users")}
+                  aria-label="Open Manage Users"
+                  title="Open Manage Users"
+              >
+                Open
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              View users and subscription status for promotions.
+            </p>
+          </section>
+        </nav>
+
+        <ActionBanners />
+
+        {/* Movies list (unchanged) */}
         <section className="space-y-3">
-          <h2 className="text-lg font-medium">Featured Trailer</h2>
-          <Trailer url={featuredTrailer} />
+          <h2 className="text-xl font-semibold">
+            {q ? `Results for “${q}”` : genre ? `Genre: ${genre}` : "All Movies"}
+          </h2>
+          {error && <p className="text-red-600">{error}</p>}
+          {loading ? (
+              <p>Loading…</p>
+          ) : movies.length === 0 ? (
+              <p className="text-gray-600">No movies found.</p>
+          ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {movies.map((m) => (
+                    <MovieCard key={m.id} movie={m} />
+                ))}
+              </div>
+          )}
         </section>
-      ) : null}
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Currently Running</h2>
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-lg opacity-70">Loading movies...</p>
-          </div>
-        ) : error ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-lg text-red-600">{error}</p>
-          </div>
-        ) : running.length ? (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {running.map((m) => (
-              <MovieCard key={m.id} movie={m} />
-            ))}
-          </div>
-        ) : (
-          <p className="opacity-70">No matches found.</p>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Coming Soon</h2>
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-lg opacity-70">Loading movies...</p>
-          </div>
-        ) : error ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="text-lg text-red-600">{error}</p>
-          </div>
-        ) : coming.length ? (
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {coming.map((m) => (
-              <MovieCard key={m.id} movie={m} />
-            ))}
-          </div>
-        ) : (
-          <p className="opacity-70">No matches found.</p>
-        )}
-      </section>
-    </main>
+        <Trailer />
+      </main>
   );
 }
+
+function ActionBanners() {
+  const sp = useSearchParams();
+  const created = sp.get("created");
+  const showtimeCreated = sp.get("showtimeCreated");
+  const promoCreated = sp.get("promoCreated");
+
+  if (!created && !showtimeCreated && !promoCreated) return null;
+
+  return (
+      <div className="space-y-2">
+        {created && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm">
+              Movie created successfully.
+            </div>
+        )}
+        {showtimeCreated && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm">
+              Showtime scheduled successfully.
+            </div>
+        )}
+        {promoCreated && (
+            <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm">
+              Promotion created successfully.
+            </div>
+        )}
+      </div>
+  );
+}
+
 
