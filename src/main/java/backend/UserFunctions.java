@@ -1,5 +1,6 @@
 package backend;
 
+import jakarta.validation.constraints.Email;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -144,7 +145,27 @@ public class UserFunctions {
         return new LoginResult(user.getUserId(), user.getFirstName(), user.getLastName(), 
                               user.getEmail(), role, true);
     }
-    
+
+
+    /**
+     * Changes password (called from ChangePassword form in Account page).
+     * @param email User's email
+     * @param hashedPassword User's encrypted new password
+     * @return true if successful, false otherwise
+     */
+    public boolean changePassword(String email, String hashedPassword) {
+        boolean updated = UserDBFunctions.updatePassword(email, hashedPassword);
+        if (!updated) {
+            System.err.println("Failed to update password");
+            return false;
+        }
+
+        String emailMessage = "Your password has been changed.\n";
+        emailService.sendProfileChangeNotification(email, UserDBFunctions.findUserByEmail(email).getFirstName(), emailMessage);
+
+        return true;
+    }
+
     /**
      * Request password reset - generates token and sends email.
      * @param email User's email
@@ -198,7 +219,6 @@ public class UserFunctions {
             System.err.println("Failed to update password");
             return false;
         }
-        
         return true;
     }
     
@@ -211,7 +231,7 @@ public class UserFunctions {
      * @param newPassword New password (null if not changing)
      * @return true if successful, false otherwise
      */
-    public boolean updateProfile(String email, String firstName, String lastName, 
+    public boolean updateProfile(String email, String firstName, String lastName,
                                  String currentPassword, String newPassword, boolean marketingOptIn) {
         String[] changes = {"", "", ""};
 
@@ -296,6 +316,10 @@ public class UserFunctions {
                 System.err.println("Failed to add payment card (may have reached 4-card limit)");
                 return null;
             }
+
+            User user = UserDBFunctions.findUserByUserID(customerId);
+            String emailMessage = "A payment card has been added to your profile.\n";
+            emailService.sendProfileChangeNotification(user.getEmail(), user.getFirstName(), emailMessage);
             
             return cardId;
             
@@ -335,6 +359,9 @@ public class UserFunctions {
      * @return true if successful, false otherwise
      */
     public boolean deletePaymentCard(String cardId, String customerId) {
+        String emailMessage = "A payment card has been deleted from your account.\n";
+        User myUser = UserDBFunctions.findUserByUserID(customerId);
+        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
         return UserDBFunctions.deletePaymentCard(cardId, customerId);
     }
     
@@ -350,6 +377,9 @@ public class UserFunctions {
      */
     public boolean saveAddress(String customerId, String street, String city, 
                                String state, String postalCode, String country) {
+        String emailMessage = "An address has been saved to your account.\n";
+        User myUser = UserDBFunctions.findUserByUserID(customerId);
+        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
         return UserDBFunctions.saveCustomerAddress(customerId, street, city, state, postalCode, country);
     }
     
@@ -365,6 +395,9 @@ public class UserFunctions {
      */
     public boolean saveBillingAddress(String customerId, String street, String city, 
                                       String state, String postalCode, String country) {
+        String emailMessage = "A billing address has been saved to your account.\n";
+        User myUser = UserDBFunctions.findUserByUserID(customerId);
+        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
         return UserDBFunctions.saveCustomerAddressByType(customerId, street, city, state, postalCode, country, "billing");
     }
     

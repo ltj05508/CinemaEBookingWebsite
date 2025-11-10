@@ -96,6 +96,37 @@ public class UserDBFunctions {
             return null;
         }
     }
+
+    public static User findUserByUserID(String userId) {
+        Connection conn = ConnectToDatabase.conn;
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT user_id, first_name, last_name, email, password, login_status, marketing_opt_in FROM Users WHERE user_id = ?"
+            );
+            stmt.setString(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new User(
+                        rs.getString("user_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("email"),
+                        rs.getString("password"),
+                        rs.getBoolean("login_status"),
+                        rs.getBoolean("marketing_opt_in")
+                );
+            }
+
+            return null;
+
+        } catch (SQLException e) {
+            System.err.println("Error finding user by userId: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
     
     /**
      * Activate a customer account (set state to Active).

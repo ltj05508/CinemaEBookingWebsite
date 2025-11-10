@@ -150,7 +150,8 @@ public class AuthAPIController {
 
             // Hash new password and update
             String hashedPassword = passwordEncoder.encode(newPassword);
-            boolean updated = UserDBFunctions.updatePassword(email, hashedPassword);
+            //boolean updated = UserFunctions.updateProfile(email, (String) session.getAttribute("firstName"), (String) session.getAttribute("lastName"), currentPassword, newPassword, false);
+            boolean updated = userFunctions.changePassword(email, hashedPassword);
             
             if (!updated) {
                 response.put("success", false);
