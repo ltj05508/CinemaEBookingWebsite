@@ -288,9 +288,21 @@ public class AuthAPIController {
             // Attempt login
             UserFunctions.LoginResult loginResult = userFunctions.login(email, password);
             
-            if (loginResult == null || !loginResult.isSuccess()) {
+            if (loginResult.isSuccess() == 0) {
                 response.put("success", false);
-                response.put("message", "Invalid credentials or account not activated");
+                response.put("message", "Incorrect username, please try again.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            if (loginResult.isSuccess() == 1) {
+                response.put("success", false);
+                response.put("message", "Incorrect password, please try again!");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
+            if (loginResult.isSuccess() == 2) {
+                response.put("success", false);
+                response.put("message", "Account is not registered. Please register account before logging in.");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             

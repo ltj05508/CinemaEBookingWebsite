@@ -110,7 +110,9 @@ public class UserFunctions {
         User user = UserDBFunctions.findUserByEmail(email);
         if (user == null) {
             System.err.println("User not found");
-            return null;
+            //return null;
+            return new LoginResult(null,null, null,
+                    null, null, 0);
         }
 
         System.out.println("1");
@@ -118,7 +120,9 @@ public class UserFunctions {
         // Verify password
         if (!passwordEncoder.matches(password, user.getPassword())) {
             System.err.println("Invalid password");
-            return null;
+            //return null;
+            return new LoginResult(null,null, null,
+                    null, null, 1);
         }
 
         System.out.println("2");
@@ -126,7 +130,9 @@ public class UserFunctions {
         // Check if customer is active
         if (!UserDBFunctions.isCustomerActive(user.getUserId())) {
             System.err.println("Account not activated. Please verify your email.");
-            return null;
+            //return null;
+            return new LoginResult(null,null, null,
+                    null, null, 2);
         }
 
         System.out.println("3");
@@ -143,7 +149,7 @@ public class UserFunctions {
         
         // Return login result
         return new LoginResult(user.getUserId(), user.getFirstName(), user.getLastName(), 
-                              user.getEmail(), role, true);
+                              user.getEmail(), role, 3);
     }
 
 
@@ -428,10 +434,10 @@ public class UserFunctions {
         private String lastName;
         private String email;
         private String role; // "ADMIN" or "CUSTOMER"
-        private boolean success;
+        private int success; //0 is a username error, 1 is a password error, 2 is an unregistered account, 3 is a success
         
         public LoginResult(String userId, String firstName, String lastName, 
-                          String email, String role, boolean success) {
+                          String email, String role, int success) {
             this.userId = userId;
             this.firstName = firstName;
             this.lastName = lastName;
@@ -445,6 +451,6 @@ public class UserFunctions {
         public String getLastName() { return lastName; }
         public String getEmail() { return email; }
         public String getRole() { return role; }
-        public boolean isSuccess() { return success; }
+        public int isSuccess() { return success; }
     }
 }
