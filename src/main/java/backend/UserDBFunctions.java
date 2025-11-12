@@ -687,4 +687,37 @@ public class UserDBFunctions {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Get all users who have opted in to receive promotional emails.
+     * Returns a list of user info (user_id, email, first_name) for users with marketing_opt_in = true.
+     * @return List of user info maps, or empty list if error
+     */
+    public static List<java.util.Map<String, String>> getSubscribedUsers() {
+        Connection conn = ConnectToDatabase.conn;
+        List<java.util.Map<String, String>> subscribedUsers = new ArrayList<>();
+        
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "SELECT user_id, email, first_name FROM Users WHERE marketing_opt_in = true"
+            );
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                java.util.Map<String, String> user = new java.util.HashMap<>();
+                user.put("userId", rs.getString("user_id"));
+                user.put("email", rs.getString("email"));
+                user.put("firstName", rs.getString("first_name"));
+                subscribedUsers.add(user);
+            }
+            
+            System.out.println("Found " + subscribedUsers.size() + " subscribed users");
+            
+        } catch (SQLException e) {
+            System.err.println("Error getting subscribed users: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return subscribedUsers;
+    }
 }

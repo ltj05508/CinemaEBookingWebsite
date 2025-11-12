@@ -109,6 +109,30 @@ public class EmailService {
     }
     
     /**
+     * Send promotional email to subscribed users.
+     * Only call this for users who have opted in to receive promotional emails (marketingOptIn = true).
+     * @param toEmail Recipient email address
+     * @param firstName User's first name
+     * @param subject Email subject
+     * @param message Promotional message body
+     */
+    public void sendPromotionEmail(String toEmail, String firstName, String subject, String message) {
+        String body = String.format(
+            "Hello %s,\n\n" +
+            "%s\n\n" +
+            "Thank you for being a valued customer!\n\n" +
+            "Best regards,\n" +
+            "Cinema E-Booking Team\n\n" +
+            "---\n" +
+            "You received this email because you opted in to receive promotional offers. " +
+            "You can manage your email preferences in your account settings.",
+            firstName, message
+        );
+        
+        sendEmail(toEmail, subject, body);
+    }
+    
+    /**
      * Send a generic email using Gmail services.
      * @param to Recipient email address
      * @param subject Email subject
