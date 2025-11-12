@@ -1,11 +1,13 @@
 package backend;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,6 +19,9 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class AdminAPIController {
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Helper method to check if user is logged in as admin.
@@ -47,8 +52,8 @@ public class AdminAPIController {
      * Add a new movie.
      * POST /api/admin/movies
      * Body: { "title": "Movie Title", "genre": "Action", "rating": "PG-13", 
-     *         "movieDescription": "...", "duration": "120 min", 
-     *         "posterUrl": "...", "trailerUrl": "...", "isCurrentlyShowing": true }
+     *         "description": "...", "durationMinutes": 120, 
+     *         "posterUrl": "...", "trailerUrl": "...", "currentlyShowing": true }
      */
     @PostMapping("/movies")
     public ResponseEntity<Map<String, Object>> addMovie(@RequestBody Map<String, Object> request, 
@@ -64,30 +69,38 @@ public class AdminAPIController {
             String title = (String) request.get("title");
             String genre = (String) request.get("genre");
             String rating = (String) request.get("rating");
-            String description = (String) request.get("movieDescription");
-            String duration = (String) request.get("duration");
+            String description = (String) request.get("description");
+            Integer durationMinutes = (Integer) request.get("durationMinutes");
             String posterUrl = (String) request.get("posterUrl");
             String trailerUrl = (String) request.get("trailerUrl");
-            Boolean isCurrentlyShowing = (Boolean) request.get("isCurrentlyShowing");
+            Boolean currentlyShowing = (Boolean) request.get("currentlyShowing");
             
             // Validate required fields
             if (title == null || title.trim().isEmpty() ||
                 genre == null || genre.trim().isEmpty() ||
                 rating == null || rating.trim().isEmpty() ||
                 description == null || description.trim().isEmpty() ||
-                duration == null || duration.trim().isEmpty()) {
+                durationMinutes == null || durationMinutes <= 0) {
                 response.put("success", false);
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // TODO: Call database function to insert movie
-            // int movieId = MovieDBFunctions.addMovie(title, genre, rating, description, 
-            //                                          duration, posterUrl, trailerUrl, isCurrentlyShowing);
+            // Set defaults
+            if (currentlyShowing == null) currentlyShowing = false;
             
-            response.put("success", true);
-            response.put("message", "Movie added successfully");
-            // response.put("movieId", movieId);
+            // Call database function to insert movie
+            int movieId = MovieDBFunctions.addMovie(title, genre, rating, description, 
+                                                    durationMinutes, posterUrl, trailerUrl, currentlyShowing);
+            
+            if (movieId > 0) {
+                response.put("success", true);
+                response.put("message", "Movie added successfully");
+                response.put("movieId", movieId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to add movie");
+            }
             
             return ResponseEntity.ok(response);
             
@@ -113,11 +126,11 @@ public class AdminAPIController {
         if (authCheck != null) return authCheck;
         
         try {
-            // TODO: Call database function to get showrooms
-            // List<Showroom> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+            // Call database function to get showrooms
+            List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
             
             response.put("success", true);
-            // response.put("showrooms", showrooms);
+            response.put("showrooms", showrooms);
             
             return ResponseEntity.ok(response);
             
@@ -131,7 +144,7 @@ public class AdminAPIController {
     /**
      * Add a showtime for a movie.
      * POST /api/admin/showtimes
-     * Body: { "movieId": 1, "showroomId": 1, "showDate": "2025-11-15", "showTime": "19:30" }
+     * Body: { "movieId": 1, "showroomId": "1", "showtime": "19:30:00" }
      */
     @PostMapping("/showtimes")
     public ResponseEntity<Map<String, Object>> addShowtime(@RequestBody Map<String, Object> request,
@@ -145,33 +158,37 @@ public class AdminAPIController {
         try {
             // Extract showtime data
             Integer movieId = (Integer) request.get("movieId");
-            Integer showroomId = (Integer) request.get("showroomId");
-            String showDate = (String) request.get("showDate");
-            String showTime = (String) request.get("showTime");
+            String showroomId = (String) request.get("showroomId");
+            String showtime = (String) request.get("showtime");
             
             // Validate required fields
-            if (movieId == null || showroomId == null || 
-                showDate == null || showDate.trim().isEmpty() ||
-                showTime == null || showTime.trim().isEmpty()) {
+            if (movieId == null || 
+                showroomId == null || showroomId.trim().isEmpty() ||
+                showtime == null || showtime.trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "Missing required fields");
+                response.put("message", "Missing required fields (movieId, showroomId, showtime)");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // TODO: Check for showtime conflicts (same showroom, date, time)
-            // boolean hasConflict = ShowtimeDBFunctions.checkConflict(showroomId, showDate, showTime);
-            // if (hasConflict) {
-            //     response.put("success", false);
-            //     response.put("message", "Showtime conflict: This showroom is already booked at this date/time");
-            //     return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-            // }
+            // Check for showtime conflicts (same showroom, time)
+            boolean hasConflict = ShowtimeDBFunctions.checkConflict(showroomId, showtime);
+            if (hasConflict) {
+                response.put("success", false);
+                response.put("message", "Showtime conflict: This showroom is already booked at this time");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            }
             
-            // TODO: Call database function to add showtime
-            // int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, showDate, showTime);
+            // Call database function to add showtime
+            int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, showtime);
             
-            response.put("success", true);
-            response.put("message", "Showtime added successfully");
-            // response.put("showtimeId", showtimeId);
+            if (showtimeId > 0) {
+                response.put("success", true);
+                response.put("message", "Showtime added successfully");
+                response.put("showtimeId", showtimeId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to add showtime");
+            }
             
             return ResponseEntity.ok(response);
             
@@ -196,11 +213,11 @@ public class AdminAPIController {
         if (authCheck != null) return authCheck;
         
         try {
-            // TODO: Call database function to get showtimes
-            // List<Showtime> showtimes = ShowtimeDBFunctions.getShowtimesByMovie(movieId);
+            // Call database function to get showtimes
+            List<Map<String, Object>> showtimes = ShowtimeDBFunctions.getShowtimesByMovie(movieId);
             
             response.put("success", true);
-            // response.put("showtimes", showtimes);
+            response.put("showtimes", showtimes);
             
             return ResponseEntity.ok(response);
             
@@ -216,8 +233,8 @@ public class AdminAPIController {
     /**
      * Create a promotion.
      * POST /api/admin/promotions
-     * Body: { "promoCode": "SAVE20", "discountPercent": 20, "startDate": "2025-11-01", 
-     *         "endDate": "2025-12-31" }
+     * Body: { "code": "SAVE20", "description": "Save 20%!", "discountPercent": 20.0, 
+     *         "validFrom": "2025-11-01", "validTo": "2025-12-31" }
      */
     @PostMapping("/promotions")
     public ResponseEntity<Map<String, Object>> createPromotion(@RequestBody Map<String, Object> request,
@@ -230,27 +247,42 @@ public class AdminAPIController {
         
         try {
             // Extract promotion data
-            String promoCode = (String) request.get("promoCode");
-            Integer discountPercent = (Integer) request.get("discountPercent");
-            String startDate = (String) request.get("startDate");
-            String endDate = (String) request.get("endDate");
+            String code = (String) request.get("code");
+            String description = (String) request.get("description");
+            Object discountObj = request.get("discountPercent");
+            String validFrom = (String) request.get("validFrom");
+            String validTo = (String) request.get("validTo");
+            
+            // Convert discount to double
+            double discountPercent = 0.0;
+            if (discountObj instanceof Integer) {
+                discountPercent = ((Integer) discountObj).doubleValue();
+            } else if (discountObj instanceof Double) {
+                discountPercent = (Double) discountObj;
+            }
             
             // Validate required fields
-            if (promoCode == null || promoCode.trim().isEmpty() ||
-                discountPercent == null || discountPercent < 1 || discountPercent > 100 ||
-                startDate == null || startDate.trim().isEmpty() ||
-                endDate == null || endDate.trim().isEmpty()) {
+            if (code == null || code.trim().isEmpty() ||
+                description == null || description.trim().isEmpty() ||
+                discountPercent < 1 || discountPercent > 100 ||
+                validFrom == null || validFrom.trim().isEmpty() ||
+                validTo == null || validTo.trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "Invalid or missing required fields (promo code, discount %, start/end date)");
+                response.put("message", "Invalid or missing required fields (code, description, discount %, validFrom, validTo)");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // TODO: Call database function to create promotion
-            // int promoId = PromotionDBFunctions.createPromotion(promoCode, discountPercent, startDate, endDate);
+            // Call database function to create promotion
+            String promoId = PromotionDBFunctions.createPromotion(code, description, discountPercent, validFrom, validTo);
             
-            response.put("success", true);
-            response.put("message", "Promotion created successfully");
-            // response.put("promoId", promoId);
+            if (promoId != null) {
+                response.put("success", true);
+                response.put("message", "Promotion created successfully");
+                response.put("promoId", promoId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to create promotion");
+            }
             
             return ResponseEntity.ok(response);
             
@@ -264,7 +296,7 @@ public class AdminAPIController {
     /**
      * Send promotion email to subscribed users.
      * POST /api/admin/promotions/email
-     * Body: { "promoId": 1, "subject": "Special Offer!", "message": "Save 20%..." }
+     * Body: { "subject": "Special Offer!", "message": "Save 20%..." }
      */
     @PostMapping("/promotions/email")
     public ResponseEntity<Map<String, Object>> sendPromotionEmail(@RequestBody Map<String, Object> request,
@@ -277,30 +309,40 @@ public class AdminAPIController {
         
         try {
             // Extract email data
-            Integer promoId = (Integer) request.get("promoId");
             String subject = (String) request.get("subject");
             String message = (String) request.get("message");
             
             // Validate required fields
-            if (promoId == null || 
-                subject == null || subject.trim().isEmpty() ||
+            if (subject == null || subject.trim().isEmpty() ||
                 message == null || message.trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "Missing required fields");
+                response.put("message", "Missing required fields (subject, message)");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // TODO: Get all users who opted in for marketing
-            // List<User> subscribedUsers = UserDBFunctions.getSubscribedUsers();
+            // Get all users who opted in for marketing
+            List<Map<String, String>> subscribedUsers = UserDBFunctions.getSubscribedUsers();
             
-            // TODO: Send email to each subscribed user
-            // for (User user : subscribedUsers) {
-            //     EmailService.sendPromotionEmail(user.getEmail(), user.getFirstName(), subject, message);
-            // }
+            // Send email to each subscribed user
+            int sentCount = 0;
+            for (Map<String, String> user : subscribedUsers) {
+                try {
+                    emailService.sendPromotionEmail(
+                        user.get("email"), 
+                        user.get("firstName"), 
+                        subject, 
+                        message
+                    );
+                    sentCount++;
+                } catch (Exception e) {
+                    System.err.println("Failed to send email to " + user.get("email") + ": " + e.getMessage());
+                }
+            }
             
             response.put("success", true);
             response.put("message", "Promotion emails sent successfully");
-            // response.put("recipientCount", subscribedUsers.size());
+            response.put("recipientCount", sentCount);
+            response.put("totalSubscribers", subscribedUsers.size());
             
             return ResponseEntity.ok(response);
             
@@ -324,11 +366,11 @@ public class AdminAPIController {
         if (authCheck != null) return authCheck;
         
         try {
-            // TODO: Call database function to get promotions
-            // List<Promotion> promotions = PromotionDBFunctions.getAllPromotions();
+            // Call database function to get promotions
+            List<Map<String, Object>> promotions = PromotionDBFunctions.getAllPromotions();
             
             response.put("success", true);
-            // response.put("promotions", promotions);
+            response.put("promotions", promotions);
             
             return ResponseEntity.ok(response);
             
