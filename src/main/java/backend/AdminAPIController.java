@@ -211,35 +211,6 @@ public class AdminAPIController {
         }
     }
 
-    /**
-     * Delete a showtime.
-     * DELETE /api/admin/showtimes/{showtimeId}
-     */
-    @DeleteMapping("/showtimes/{showtimeId}")
-    public ResponseEntity<Map<String, Object>> deleteShowtime(@PathVariable int showtimeId,
-                                                              HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
-        
-        // Check admin auth
-        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
-        if (authCheck != null) return authCheck;
-        
-        try {
-            // TODO: Call database function to delete showtime
-            // boolean deleted = ShowtimeDBFunctions.deleteShowtime(showtimeId);
-            
-            response.put("success", true);
-            response.put("message", "Showtime deleted successfully");
-            
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Internal server error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
     // ==================== PROMOTION MANAGEMENT ====================
 
     /**
