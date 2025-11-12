@@ -24,7 +24,8 @@ public class MovieDBFunctions {
     public static int addMovie(String title, String genre, String rating, String description,
                                int durationMinutes, String posterUrl, String trailerUrl, 
                                boolean currentlyShowing) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         int movieId = -1;

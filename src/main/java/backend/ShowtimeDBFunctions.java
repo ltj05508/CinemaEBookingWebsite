@@ -18,7 +18,8 @@ public class ShowtimeDBFunctions {
      * @return List of showroom maps with id, name, and seat_count
      */
     public static List<Map<String, Object>> getAllShowrooms() {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showrooms = new ArrayList<>();
@@ -63,7 +64,8 @@ public class ShowtimeDBFunctions {
      * @return true if conflict exists, false otherwise
      */
     public static boolean checkConflict(String showroomId, String showtime) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean hasConflict = false;
@@ -113,7 +115,8 @@ public class ShowtimeDBFunctions {
      * @return The generated showtimeId, or -1 if insert failed
      */
     public static int addShowtime(int movieId, String showroomId, String showtime) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         int showtimeId = -1;
@@ -161,7 +164,8 @@ public class ShowtimeDBFunctions {
      * @return List of showtime maps with details
      */
     public static List<Map<String, Object>> getShowtimesByMovie(int movieId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showtimes = new ArrayList<>();

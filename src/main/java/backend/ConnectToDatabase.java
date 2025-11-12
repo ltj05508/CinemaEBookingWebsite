@@ -10,7 +10,7 @@ import jakarta.mail.*;
 import jakarta.mail.internet.*;
 
 public class ConnectToDatabase {
-    public static Connection conn = null;
+    //public static Connection conn = null;
     public static List<Movie> movies;
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -22,7 +22,14 @@ public class ConnectToDatabase {
         String username = "root";
         String password = "Booboorex"; //replace with your own password
 
-        setUpConnection(hostURL, databaseName, username, password);
+        //setUpConnection(hostURL, databaseName, username, password);
+
+        /*
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        conn = dcs.getConn();
+        */
+
+
 
 
         /*
@@ -34,11 +41,14 @@ public class ConnectToDatabase {
 
         //readMovies();
         //String[] movieData = retrieveMovieData(1);
+        /*
         List<String> cards = new ArrayList<>();
         cards.add("1");
         cards.add("2");
         cards.add("3");
         System.out.println(cards.size());
+        */
+
 
         //UserFunctions uf = new UserFunctions(new EmailService());
 
@@ -68,6 +78,7 @@ public class ConnectToDatabase {
         System.out.println(newCust.getPaymentCards()[0]);
          */
 
+        /*
         if (conn != null) {
             try {
                 conn.close();
@@ -75,8 +86,9 @@ public class ConnectToDatabase {
                 System.out.println("Did not close conn :'(");
             }
         }
+        */
     }
-
+/*
     public static Customer getCustomerInfo(String userId) {
         Customer cust = new Customer();
         try {
@@ -106,7 +118,7 @@ public class ConnectToDatabase {
      * Called for both forget password and registration confirmation?
      */
 
-
+    /*
     public static void sendEmail(String toAddress, String subjectLine, String bodyText) {
         try {
             props.setProperty("mail.smtp.auth", "true");
@@ -207,6 +219,7 @@ public class ConnectToDatabase {
     /*
      * Creates a connection to the sql server using DriverManager.getConnection()
      */
+    /*
     public static void setUpConnection(String hostURL, String databaseName, String username, String password) {
         try {                                     //"jdbc:mysql://151.101.1.69:3306/databasename?useUnicode=true&characterEncoding=utf8"
             conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
@@ -221,6 +234,7 @@ public class ConnectToDatabase {
     /*
      * Prints entire database table into console
      */
+    /*
     public static void readMovies() {
         try {
             Statement state = conn.createStatement();
@@ -249,6 +263,7 @@ public class ConnectToDatabase {
     /*
      * Returns all the data for one of the movie entries based on its movie_id number
      */
+    /*
     public static String[] retrieveMovieData(int movie_id) {
         String[] movieInfo = new String[10];
         try {
@@ -307,4 +322,6 @@ public class ConnectToDatabase {
         public String getRole() { return role; }
         public boolean isSuccess() { return success; }
     }
+
+     */
 }

@@ -20,7 +20,9 @@ public class UserDBFunctions {
      * @return The generated user_id, or null if error
      */
     public static String createUser(String firstName, String lastName, String email, String hashedPassword, boolean marketingOptIn) {
-        Connection conn = ConnectToDatabase.conn;
+        //Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         String userId = UUID.randomUUID().toString();
         
         try {
@@ -67,7 +69,8 @@ public class UserDBFunctions {
      * @return User object if found, null otherwise
      */
     public static User findUserByEmail(String email) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -98,7 +101,8 @@ public class UserDBFunctions {
     }
 
     public static User findUserByUserID(String userId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
 
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -134,7 +138,8 @@ public class UserDBFunctions {
      * @return true if successful, false otherwise
      */
     public static boolean activateCustomer(String email) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             // Get user_id from email
@@ -164,7 +169,8 @@ public class UserDBFunctions {
      * @return true if user is admin, false otherwise
      */
     public static boolean isAdmin(String userId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -188,7 +194,8 @@ public class UserDBFunctions {
      * @return true if active, false otherwise
      */
     public static boolean isCustomerActive(String userId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -218,7 +225,8 @@ public class UserDBFunctions {
      * @return true if successful, false otherwise
      */
     public static boolean updatePassword(String email, String hashedPassword) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -245,7 +253,8 @@ public class UserDBFunctions {
      * @return true if successful, false otherwise
      */
     public static boolean updateProfile(String email, String firstName, String lastName, boolean marketingOptIn) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -272,7 +281,8 @@ public class UserDBFunctions {
      * @return Address object if exists, null otherwise
      */
     public static Address getCustomerAddress(String customerId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             // Get the address NOT being used as a billing address
@@ -314,7 +324,8 @@ public class UserDBFunctions {
      */
     public static Address getCustomerAddressByType(String customerId, String addressType) {
         if ("billing".equals(addressType)) {
-            Connection conn = ConnectToDatabase.conn;
+            DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+            Connection conn = dcs.getConn();
             
             try {
                 // First try to get billing address linked to payment card
@@ -393,7 +404,8 @@ public class UserDBFunctions {
      */
     public static boolean saveCustomerAddress(String customerId, String street, String city, 
                                               String state, String postalCode, String country) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             // Check if they have a shipping address (not used as billing)
@@ -452,7 +464,8 @@ public class UserDBFunctions {
     public static boolean saveCustomerAddressByType(String customerId, String street, String city, 
                                                      String state, String postalCode, String country, String addressType) {
         if ("billing".equals(addressType)) {
-            Connection conn = ConnectToDatabase.conn;
+            DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+            Connection conn = dcs.getConn();
             
             try {
                 // First, check if there's an existing billing address
@@ -562,7 +575,8 @@ public class UserDBFunctions {
      * @return List of PaymentCard objects
      */
     public static List<PaymentCard> getCustomerPaymentCards(String customerId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         List<PaymentCard> cards = new ArrayList<>();
         
         try {
@@ -605,7 +619,8 @@ public class UserDBFunctions {
      */
     public static String addPaymentCard(String customerId, String encryptedCardNumber, 
                                        Date expirationDate, String billingAddressId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             // Check card limit (max 4 cards)
@@ -655,7 +670,8 @@ public class UserDBFunctions {
      * @return true if successful, false otherwise
      */
     public static boolean deletePaymentCard(String cardId, String customerId) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         
         try {
             PreparedStatement stmt = conn.prepareStatement(
@@ -675,7 +691,8 @@ public class UserDBFunctions {
     }
 
     public static void setLoginStatus(boolean loginStatus, String email) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
 
         try {
             PreparedStatement stmt = conn.prepareStatement("UPDATE Users SET login_status = ? WHERE email = ?");
@@ -694,7 +711,8 @@ public class UserDBFunctions {
      * @return List of user info maps, or empty list if error
      */
     public static List<java.util.Map<String, String>> getSubscribedUsers() {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         List<java.util.Map<String, String>> subscribedUsers = new ArrayList<>();
         
         try {

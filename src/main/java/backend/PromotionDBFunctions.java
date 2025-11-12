@@ -25,7 +25,8 @@ public class PromotionDBFunctions {
      */
     public static String createPromotion(String code, String description, double discountPercent, 
                                         String validFrom, String validTo) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         String promoId = UUID.randomUUID().toString();
 
@@ -68,7 +69,8 @@ public class PromotionDBFunctions {
      * @return List of promotion maps with details
      */
     public static List<Map<String, Object>> getAllPromotions() {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> promotions = new ArrayList<>();
@@ -114,7 +116,8 @@ public class PromotionDBFunctions {
      * @return Promotion map with details, or null if not found
      */
     public static Map<String, Object> getPromotionByCode(String code) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Map<String, Object> promotion = null;
@@ -160,7 +163,8 @@ public class PromotionDBFunctions {
      * @return true if promotion exists and is currently active, false otherwise
      */
     public static boolean isPromotionActive(String code) {
-        Connection conn = ConnectToDatabase.conn;
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean isActive = false;

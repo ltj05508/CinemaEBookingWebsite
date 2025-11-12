@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
  * Configuration class to initialize the database connection on Spring Boot startup.
  * This ensures ConnectToDatabase.conn is initialized before any database operations.
  */
+/*
 @Configuration
 public class DatabaseConfig {
     
@@ -24,6 +25,7 @@ public class DatabaseConfig {
      * Initialize database connection after Spring context is loaded.
      * Extracts host and database name from the JDBC URL and calls ConnectToDatabase.setUpConnection().
      */
+/*
     @PostConstruct
     public void initializeDatabaseConnection() {
         try {
@@ -59,3 +61,4 @@ public class DatabaseConfig {
         }
     }
 }
+*/
