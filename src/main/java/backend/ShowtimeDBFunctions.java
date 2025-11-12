@@ -15,26 +15,25 @@ public class ShowtimeDBFunctions {
     /**
      * Get all available showrooms.
      * 
-     * @return List of showroom maps with id, name, and capacity
+     * @return List of showroom maps with id, name, and seat_count
      */
     public static List<Map<String, Object>> getAllShowrooms() {
-        Connection conn = null;
+        Connection conn = ConnectToDatabase.conn;
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showrooms = new ArrayList<>();
 
         try {
-            conn = ConnectToDatabase.getConnection();
             stmt = conn.createStatement();
             
-            String sql = "SELECT showroomId, showroomName, capacity FROM Showrooms ORDER BY showroomId";
+            String sql = "SELECT showroom_id, name, seat_count FROM Showrooms ORDER BY showroom_id";
             rs = stmt.executeQuery(sql);
             
             while (rs.next()) {
                 Map<String, Object> showroom = new HashMap<>();
-                showroom.put("showroomId", rs.getInt("showroomId"));
-                showroom.put("showroomName", rs.getString("showroomName"));
-                showroom.put("capacity", rs.getInt("capacity"));
+                showroom.put("showroomId", rs.getString("showroom_id"));
+                showroom.put("name", rs.getString("name"));
+                showroom.put("seatCount", rs.getInt("seat_count"));
                 
                 showrooms.add(showroom);
             }
@@ -56,30 +55,27 @@ public class ShowtimeDBFunctions {
     }
 
     /**
-     * Check if there is a scheduling conflict for a showroom at a specific date and time.
-     * A conflict exists if the same showroom is already booked at the same date/time.
+     * Check if there is a scheduling conflict for a showroom at a specific time.
+     * A conflict exists if the same showroom is already booked at the same time.
      * 
-     * @param showroomId ID of the showroom
-     * @param showDate Date of the showing (YYYY-MM-DD)
-     * @param showTime Time of the showing (HH:MM)
+     * @param showroomId ID of the showroom (VARCHAR)
+     * @param showtime Time of the showing (HH:MM:SS format)
      * @return true if conflict exists, false otherwise
      */
-    public static boolean checkConflict(int showroomId, String showDate, String showTime) {
-        Connection conn = null;
+    public static boolean checkConflict(String showroomId, String showtime) {
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean hasConflict = false;
 
         try {
-            conn = ConnectToDatabase.getConnection();
             
             String sql = "SELECT COUNT(*) as count FROM Showtimes " +
-                        "WHERE showroomId = ? AND showDate = ? AND showTime = ?";
+                        "WHERE showroom_id = ? AND showtime = ?";
             
             pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, showroomId);
-            pstmt.setString(2, showDate);
-            pstmt.setString(3, showTime);
+            pstmt.setString(1, showroomId);
+            pstmt.setString(2, showtime);
             
             rs = pstmt.executeQuery();
             
@@ -89,7 +85,7 @@ public class ShowtimeDBFunctions {
             
             if (hasConflict) {
                 System.out.println("Conflict detected: Showroom " + showroomId + 
-                                 " is already booked for " + showDate + " at " + showTime);
+                                 " is already booked at " + showtime);
             }
             
         } catch (SQLException e) {
@@ -112,28 +108,24 @@ public class ShowtimeDBFunctions {
      * Add a new showtime for a movie.
      * 
      * @param movieId ID of the movie
-     * @param showroomId ID of the showroom
-     * @param showDate Date of the showing (YYYY-MM-DD)
-     * @param showTime Time of the showing (HH:MM)
+     * @param showroomId ID of the showroom (VARCHAR)
+     * @param showtime Time of the showing (HH:MM:SS format)
      * @return The generated showtimeId, or -1 if insert failed
      */
-    public static int addShowtime(int movieId, int showroomId, String showDate, String showTime) {
-        Connection conn = null;
+    public static int addShowtime(int movieId, String showroomId, String showtime) {
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         int showtimeId = -1;
 
         try {
-            conn = ConnectToDatabase.getConnection();
-            
-            String sql = "INSERT INTO Showtimes (movieId, showroomId, showDate, showTime) " +
-                        "VALUES (?, ?, ?, ?)";
+            String sql = "INSERT INTO Showtimes (movie_id, showroom_id, showtime) " +
+                        "VALUES (?, ?, ?)";
             
             pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, movieId);
-            pstmt.setInt(2, showroomId);
-            pstmt.setString(3, showDate);
-            pstmt.setString(4, showTime);
+            pstmt.setString(2, showroomId);
+            pstmt.setString(3, showtime);
             
             int affectedRows = pstmt.executeUpdate();
             
@@ -169,20 +161,18 @@ public class ShowtimeDBFunctions {
      * @return List of showtime maps with details
      */
     public static List<Map<String, Object>> getShowtimesByMovie(int movieId) {
-        Connection conn = null;
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showtimes = new ArrayList<>();
 
         try {
-            conn = ConnectToDatabase.getConnection();
-            
-            String sql = "SELECT s.showtimeId, s.movieId, s.showroomId, s.showDate, s.showTime, " +
-                        "sr.showroomName, sr.capacity " +
+            String sql = "SELECT s.showtime_id, s.movie_id, s.showroom_id, s.showtime, " +
+                        "sr.name, sr.seat_count " +
                         "FROM Showtimes s " +
-                        "JOIN Showrooms sr ON s.showroomId = sr.showroomId " +
-                        "WHERE s.movieId = ? " +
-                        "ORDER BY s.showDate, s.showTime";
+                        "JOIN Showrooms sr ON s.showroom_id = sr.showroom_id " +
+                        "WHERE s.movie_id = ? " +
+                        "ORDER BY s.showtime";
             
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, movieId);
@@ -191,13 +181,12 @@ public class ShowtimeDBFunctions {
             
             while (rs.next()) {
                 Map<String, Object> showtime = new HashMap<>();
-                showtime.put("showtimeId", rs.getInt("showtimeId"));
-                showtime.put("movieId", rs.getInt("movieId"));
-                showtime.put("showroomId", rs.getInt("showroomId"));
-                showtime.put("showDate", rs.getString("showDate"));
-                showtime.put("showTime", rs.getString("showTime"));
-                showtime.put("showroomName", rs.getString("showroomName"));
-                showtime.put("capacity", rs.getInt("capacity"));
+                showtime.put("showtimeId", rs.getInt("showtime_id"));
+                showtime.put("movieId", rs.getInt("movie_id"));
+                showtime.put("showroomId", rs.getString("showroom_id"));
+                showtime.put("showtime", rs.getString("showtime"));
+                showtime.put("showroomName", rs.getString("name"));
+                showtime.put("seatCount", rs.getInt("seat_count"));
                 
                 showtimes.add(showtime);
             }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Database functions for promotion management.
@@ -15,56 +16,50 @@ public class PromotionDBFunctions {
     /**
      * Create a new promotion.
      * 
-     * @param promoCode Unique promotion code (e.g., "SAVE20")
+     * @param code Unique promotion code (e.g., "SAVE20")
+     * @param description Description of the promotion
      * @param discountPercent Discount percentage (1-100)
-     * @param startDate Start date of promotion (YYYY-MM-DD)
-     * @param endDate End date of promotion (YYYY-MM-DD)
-     * @return The generated promotionId, or -1 if insert failed
+     * @param validFrom Start date of promotion (YYYY-MM-DD)
+     * @param validTo End date of promotion (YYYY-MM-DD)
+     * @return The generated promoId (UUID), or null if insert failed
      */
-    public static int createPromotion(String promoCode, int discountPercent, 
-                                     String startDate, String endDate) {
-        Connection conn = null;
+    public static String createPromotion(String code, String description, double discountPercent, 
+                                        String validFrom, String validTo) {
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        int promotionId = -1;
+        String promoId = UUID.randomUUID().toString();
 
         try {
-            conn = ConnectToDatabase.getConnection();
+            String sql = "INSERT INTO Promotions (promo_id, code, description, discount_percent, valid_from, valid_to) " +
+                        "VALUES (?, ?, ?, ?, ?, ?)";
             
-            String sql = "INSERT INTO Promotions (promo_code, discount_percent, start_date, end_date) " +
-                        "VALUES (?, ?, ?, ?)";
-            
-            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            pstmt.setString(1, promoCode);
-            pstmt.setInt(2, discountPercent);
-            pstmt.setString(3, startDate);
-            pstmt.setString(4, endDate);
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, promoId);
+            pstmt.setString(2, code);
+            pstmt.setString(3, description);
+            pstmt.setDouble(4, discountPercent);
+            pstmt.setString(5, validFrom);
+            pstmt.setString(6, validTo);
             
             int affectedRows = pstmt.executeUpdate();
             
             if (affectedRows > 0) {
-                rs = pstmt.getGeneratedKeys();
-                if (rs.next()) {
-                    promotionId = rs.getInt(1);
-                }
+                System.out.println("Promotion created successfully with ID: " + promoId);
+                return promoId;
             }
-            
-            System.out.println("Promotion created successfully with ID: " + promotionId);
             
         } catch (SQLException e) {
             System.err.println("Error creating promotion: " + e.getMessage());
             e.printStackTrace();
         } finally {
             try {
-                if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
         
-        return promotionId;
+        return null;
     }
 
     /**
@@ -73,26 +68,26 @@ public class PromotionDBFunctions {
      * @return List of promotion maps with details
      */
     public static List<Map<String, Object>> getAllPromotions() {
-        Connection conn = null;
+        Connection conn = ConnectToDatabase.conn;
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> promotions = new ArrayList<>();
 
         try {
-            conn = ConnectToDatabase.getConnection();
             stmt = conn.createStatement();
             
-            String sql = "SELECT promotion_id, promo_code, discount_percent, start_date, end_date " +
-                        "FROM Promotions ORDER BY start_date DESC";
+            String sql = "SELECT promo_id, code, description, discount_percent, valid_from, valid_to " +
+                        "FROM Promotions ORDER BY valid_from DESC";
             rs = stmt.executeQuery(sql);
             
             while (rs.next()) {
                 Map<String, Object> promotion = new HashMap<>();
-                promotion.put("promotionId", rs.getInt("promotion_id"));
-                promotion.put("promoCode", rs.getString("promo_code"));
-                promotion.put("discountPercent", rs.getInt("discount_percent"));
-                promotion.put("startDate", rs.getString("start_date"));
-                promotion.put("endDate", rs.getString("end_date"));
+                promotion.put("promoId", rs.getString("promo_id"));
+                promotion.put("code", rs.getString("code"));
+                promotion.put("description", rs.getString("description"));
+                promotion.put("discountPercent", rs.getDouble("discount_percent"));
+                promotion.put("validFrom", rs.getString("valid_from"));
+                promotion.put("validTo", rs.getString("valid_to"));
                 
                 promotions.add(promotion);
             }
@@ -104,7 +99,6 @@ public class PromotionDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -116,33 +110,32 @@ public class PromotionDBFunctions {
     /**
      * Get a promotion by its code.
      * 
-     * @param promoCode The promotion code to lookup
+     * @param code The promotion code to lookup
      * @return Promotion map with details, or null if not found
      */
-    public static Map<String, Object> getPromotionByCode(String promoCode) {
-        Connection conn = null;
+    public static Map<String, Object> getPromotionByCode(String code) {
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Map<String, Object> promotion = null;
 
         try {
-            conn = ConnectToDatabase.getConnection();
-            
-            String sql = "SELECT promotion_id, promo_code, discount_percent, start_date, end_date " +
-                        "FROM Promotions WHERE promo_code = ?";
+            String sql = "SELECT promo_id, code, description, discount_percent, valid_from, valid_to " +
+                        "FROM Promotions WHERE code = ?";
             
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, promoCode);
+            pstmt.setString(1, code);
             
             rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 promotion = new HashMap<>();
-                promotion.put("promotionId", rs.getInt("promotion_id"));
-                promotion.put("promoCode", rs.getString("promo_code"));
-                promotion.put("discountPercent", rs.getInt("discount_percent"));
-                promotion.put("startDate", rs.getString("start_date"));
-                promotion.put("endDate", rs.getString("end_date"));
+                promotion.put("promoId", rs.getString("promo_id"));
+                promotion.put("code", rs.getString("code"));
+                promotion.put("description", rs.getString("description"));
+                promotion.put("discountPercent", rs.getDouble("discount_percent"));
+                promotion.put("validFrom", rs.getString("valid_from"));
+                promotion.put("validTo", rs.getString("valid_to"));
             }
             
         } catch (SQLException e) {
@@ -152,7 +145,6 @@ public class PromotionDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -164,23 +156,21 @@ public class PromotionDBFunctions {
     /**
      * Validate if a promotion code is currently active.
      * 
-     * @param promoCode The promotion code to validate
+     * @param code The promotion code to validate
      * @return true if promotion exists and is currently active, false otherwise
      */
-    public static boolean isPromotionActive(String promoCode) {
-        Connection conn = null;
+    public static boolean isPromotionActive(String code) {
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean isActive = false;
 
         try {
-            conn = ConnectToDatabase.getConnection();
-            
             String sql = "SELECT COUNT(*) as count FROM Promotions " +
-                        "WHERE promo_code = ? AND CURDATE() BETWEEN start_date AND end_date";
+                        "WHERE code = ? AND CURDATE() BETWEEN valid_from AND valid_to";
             
             pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, promoCode);
+            pstmt.setString(1, code);
             
             rs = pstmt.executeQuery();
             
@@ -195,7 +185,6 @@ public class PromotionDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }

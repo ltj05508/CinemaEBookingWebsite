@@ -1,12 +1,10 @@
 package backend;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Database functions for movie management.
- * Handles CRUD operations for movies in the database.
+ * Handles adding movies to the database.
  */
 public class MovieDBFunctions {
 
@@ -26,13 +24,12 @@ public class MovieDBFunctions {
     public static int addMovie(String title, String genre, String rating, String description,
                                int durationMinutes, String posterUrl, String trailerUrl, 
                                boolean currentlyShowing) {
-        Connection conn = null;
+        Connection conn = ConnectToDatabase.conn;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         int movieId = -1;
 
         try {
-            conn = ConnectToDatabase.getConnection();
             
             String sql = "INSERT INTO Movies (title, genre, rating, description, duration_minutes, " +
                         "poster_url, trailer_url, currently_showing) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -65,7 +62,6 @@ public class MovieDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
