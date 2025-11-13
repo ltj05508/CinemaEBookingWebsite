@@ -22,7 +22,6 @@ public class UserDBFunctions {
     public static String createUser(String firstName, String lastName, String email, String hashedPassword, boolean marketingOptIn) {
         //Connection conn = ConnectToDatabase.conn;
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         String userId = UUID.randomUUID().toString();
         
         try {
@@ -33,7 +32,7 @@ public class UserDBFunctions {
             }
             
             // Insert into Users table
-            PreparedStatement userStmt = conn.prepareStatement(
+            PreparedStatement userStmt = dcs.getConn().prepareStatement(
                 "INSERT INTO Users (user_id, first_name, last_name, email, password, login_status, marketing_opt_in) VALUES (?, ?, ?, ?, ?, ?, ?)"
             );
             userStmt.setString(1, userId);
@@ -47,7 +46,7 @@ public class UserDBFunctions {
             
             // Insert into Customers table with Inactive state
             String customerId = userId; // Same as user_id
-            PreparedStatement customerStmt = conn.prepareStatement(
+            PreparedStatement customerStmt = dcs.getConn().prepareStatement(
                 "INSERT INTO Customers (customer_id, state) VALUES (?, ?)"
             );
             customerStmt.setString(1, customerId);
@@ -70,10 +69,9 @@ public class UserDBFunctions {
      */
     public static User findUserByEmail(String email) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT user_id, first_name, last_name, email, password, login_status, marketing_opt_in FROM Users WHERE email = ?"
             );
             stmt.setString(1, email);
@@ -102,10 +100,9 @@ public class UserDBFunctions {
 
     public static User findUserByUserID(String userId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
 
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                     "SELECT user_id, first_name, last_name, email, password, login_status, marketing_opt_in FROM Users WHERE user_id = ?"
             );
             stmt.setString(1, userId);
@@ -139,7 +136,6 @@ public class UserDBFunctions {
      */
     public static boolean activateCustomer(String email) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
             // Get user_id from email
@@ -147,7 +143,7 @@ public class UserDBFunctions {
             if (user == null) return false;
             
             // Update Customers table
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "UPDATE Customers SET state = ? WHERE customer_id = ?"
             );
             stmt.setString(1, "Active");
@@ -170,10 +166,9 @@ public class UserDBFunctions {
      */
     public static boolean isAdmin(String userId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT admin_id FROM Admins WHERE admin_id = ?"
             );
             stmt.setString(1, userId);
@@ -195,10 +190,9 @@ public class UserDBFunctions {
      */
     public static boolean isCustomerActive(String userId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT state FROM Customers WHERE customer_id = ?"
             );
             stmt.setString(1, userId);
@@ -226,10 +220,9 @@ public class UserDBFunctions {
      */
     public static boolean updatePassword(String email, String hashedPassword) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "UPDATE Users SET password = ? WHERE email = ?"
             );
             stmt.setString(1, hashedPassword);
@@ -254,10 +247,9 @@ public class UserDBFunctions {
      */
     public static boolean updateProfile(String email, String firstName, String lastName, boolean marketingOptIn) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "UPDATE Users SET first_name = ?, last_name = ?, marketing_opt_in = ? WHERE email = ?"
             );
             stmt.setString(1, firstName);
@@ -282,11 +274,10 @@ public class UserDBFunctions {
      */
     public static Address getCustomerAddress(String customerId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
             // Get the address NOT being used as a billing address
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT address_id, street, city, state, postal_code, country FROM Addresses " +
                 "WHERE customer_id = ? AND address_id NOT IN " +
                 "(SELECT billing_address_id FROM PaymentCards WHERE customer_id = ? AND billing_address_id IS NOT NULL) " +
@@ -325,11 +316,10 @@ public class UserDBFunctions {
     public static Address getCustomerAddressByType(String customerId, String addressType) {
         if ("billing".equals(addressType)) {
             DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-            Connection conn = dcs.getConn();
             
             try {
                 // First try to get billing address linked to payment card
-                PreparedStatement stmt = conn.prepareStatement(
+                PreparedStatement stmt = dcs.getConn().prepareStatement(
                     "SELECT a.address_id, a.street, a.city, a.state, a.postal_code, a.country " +
                     "FROM Addresses a " +
                     "JOIN PaymentCards pc ON a.address_id = pc.billing_address_id " +
@@ -352,7 +342,7 @@ public class UserDBFunctions {
                 
                 // If no card-linked billing address, look for standalone billing address
                 // (an address that's not the shipping address and not linked to any card)
-                PreparedStatement standaloneStmt = conn.prepareStatement(
+                PreparedStatement standaloneStmt = dcs.getConn().prepareStatement(
                     "SELECT a.address_id, a.street, a.city, a.state, a.postal_code, a.country " +
                     "FROM Addresses a " +
                     "WHERE a.customer_id = ? " +
@@ -405,7 +395,6 @@ public class UserDBFunctions {
     public static boolean saveCustomerAddress(String customerId, String street, String city, 
                                               String state, String postalCode, String country) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
             // Check if they have a shipping address (not used as billing)
@@ -413,7 +402,7 @@ public class UserDBFunctions {
             
             if (existing != null) {
                 // Update existing shipping address
-                PreparedStatement stmt = conn.prepareStatement(
+                PreparedStatement stmt = dcs.getConn().prepareStatement(
                     "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
                     "WHERE address_id = ?"
                 );
@@ -427,7 +416,7 @@ public class UserDBFunctions {
             } else {
                 // Create new shipping address
                 String addressId = UUID.randomUUID().toString();
-                PreparedStatement stmt = conn.prepareStatement(
+                PreparedStatement stmt = dcs.getConn().prepareStatement(
                     "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)"
                 );
@@ -465,7 +454,6 @@ public class UserDBFunctions {
                                                      String state, String postalCode, String country, String addressType) {
         if ("billing".equals(addressType)) {
             DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-            Connection conn = dcs.getConn();
             
             try {
                 // First, check if there's an existing billing address
@@ -473,7 +461,7 @@ public class UserDBFunctions {
                 
                 if (existingBillingAddr != null) {
                     // Update existing billing address
-                    PreparedStatement updateStmt = conn.prepareStatement(
+                    PreparedStatement updateStmt = dcs.getConn().prepareStatement(
                         "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
                         "WHERE address_id = ?"
                     );
@@ -488,7 +476,7 @@ public class UserDBFunctions {
                 }
                 
                 // No existing billing address, check if they have a payment card
-                PreparedStatement cardStmt = conn.prepareStatement(
+                PreparedStatement cardStmt = dcs.getConn().prepareStatement(
                     "SELECT card_id, billing_address_id FROM PaymentCards WHERE customer_id = ? LIMIT 1"
                 );
                 cardStmt.setString(1, customerId);
@@ -501,7 +489,7 @@ public class UserDBFunctions {
                     
                     if (existingBillingAddressId != null) {
                         // Update existing billing address linked to card
-                        PreparedStatement updateStmt = conn.prepareStatement(
+                        PreparedStatement updateStmt = dcs.getConn().prepareStatement(
                             "UPDATE Addresses SET street = ?, city = ?, state = ?, postal_code = ?, country = ? " +
                             "WHERE address_id = ?"
                         );
@@ -515,7 +503,7 @@ public class UserDBFunctions {
                     } else {
                         // Create NEW address row for billing and link to card
                         String newAddressId = UUID.randomUUID().toString();
-                        PreparedStatement insertStmt = conn.prepareStatement(
+                        PreparedStatement insertStmt = dcs.getConn().prepareStatement(
                             "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
                             "VALUES (?, ?, ?, ?, ?, ?, ?)"
                         );
@@ -529,7 +517,7 @@ public class UserDBFunctions {
                         insertStmt.executeUpdate();
                         
                         // Link new address to payment card
-                        PreparedStatement linkStmt = conn.prepareStatement(
+                        PreparedStatement linkStmt = dcs.getConn().prepareStatement(
                             "UPDATE PaymentCards SET billing_address_id = ? WHERE card_id = ?"
                         );
                         linkStmt.setString(1, newAddressId);
@@ -540,7 +528,7 @@ public class UserDBFunctions {
                     // No card yet - just create a standalone billing address
                     // When they add a card later, we'll link it automatically
                     String newAddressId = UUID.randomUUID().toString();
-                    PreparedStatement insertStmt = conn.prepareStatement(
+                    PreparedStatement insertStmt = dcs.getConn().prepareStatement(
                         "INSERT INTO Addresses (address_id, street, city, state, postal_code, country, customer_id) " +
                         "VALUES (?, ?, ?, ?, ?, ?, ?)"
                     );
@@ -576,12 +564,11 @@ public class UserDBFunctions {
      */
     public static List<PaymentCard> getCustomerPaymentCards(String customerId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         List<PaymentCard> cards = new ArrayList<>();
         
         try {
             System.out.println("DEBUG: getCustomerPaymentCards called with customerId = " + customerId);
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT card_id, card_number, expiration_date, billing_address_id FROM PaymentCards WHERE customer_id = ?"
             );
             stmt.setString(1, customerId);
@@ -620,7 +607,6 @@ public class UserDBFunctions {
     public static String addPaymentCard(String customerId, String encryptedCardNumber, 
                                        Date expirationDate, String billingAddressId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
             // Check card limit (max 4 cards)
@@ -642,7 +628,7 @@ public class UserDBFunctions {
             }
             
             String cardId = UUID.randomUUID().toString();
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "INSERT INTO PaymentCards (card_id, card_number, expiration_date, customer_id, billing_address_id) VALUES (?, ?, ?, ?, ?)"
             );
             stmt.setString(1, cardId);
@@ -671,10 +657,9 @@ public class UserDBFunctions {
      */
     public static boolean deletePaymentCard(String cardId, String customerId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "DELETE FROM PaymentCards WHERE card_id = ? AND customer_id = ?"
             );
             stmt.setString(1, cardId);
@@ -692,10 +677,9 @@ public class UserDBFunctions {
 
     public static void setLoginStatus(boolean loginStatus, String email) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
 
         try {
-            PreparedStatement stmt = conn.prepareStatement("UPDATE Users SET login_status = ? WHERE email = ?");
+            PreparedStatement stmt = dcs.getConn().prepareStatement("UPDATE Users SET login_status = ? WHERE email = ?");
             stmt.setBoolean(1, loginStatus);
             stmt.setString(2, email);
             stmt.executeUpdate();
@@ -712,11 +696,10 @@ public class UserDBFunctions {
      */
     public static List<java.util.Map<String, String>> getSubscribedUsers() {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         List<java.util.Map<String, String>> subscribedUsers = new ArrayList<>();
         
         try {
-            PreparedStatement stmt = conn.prepareStatement(
+            PreparedStatement stmt = dcs.getConn().prepareStatement(
                 "SELECT user_id, email, first_name FROM Users WHERE marketing_opt_in = true"
             );
             ResultSet rs = stmt.executeQuery();

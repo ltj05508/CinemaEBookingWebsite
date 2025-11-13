@@ -164,7 +164,6 @@ public class PromotionDBFunctions {
      */
     public static boolean isPromotionActive(String code) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean isActive = false;
@@ -173,7 +172,7 @@ public class PromotionDBFunctions {
             String sql = "SELECT COUNT(*) as count FROM Promotions " +
                         "WHERE code = ? AND CURDATE() BETWEEN valid_from AND valid_to";
             
-            pstmt = conn.prepareStatement(sql);
+            pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, code);
             
             rs = pstmt.executeQuery();

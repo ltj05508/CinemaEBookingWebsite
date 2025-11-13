@@ -294,9 +294,20 @@ public class UserFunctions {
             emailMessage += changes[i];
         }
 
+
+        String finalEmailMessage = emailMessage;
+        new Thread(() -> {
+            if (!finalEmailMessage.isEmpty()) {
+                emailService.sendProfileChangeNotification(email, user.getFirstName(), finalEmailMessage);
+            }
+        }).start();
+
+        /*
         if (!emailMessage.isEmpty()) {
             emailService.sendProfileChangeNotification(email, user.getFirstName(), emailMessage);
         }
+        */
+
         return true;
     }
     
@@ -325,7 +336,10 @@ public class UserFunctions {
 
             User user = UserDBFunctions.findUserByUserID(customerId);
             String emailMessage = "A payment card has been added to your profile.\n";
-            emailService.sendProfileChangeNotification(user.getEmail(), user.getFirstName(), emailMessage);
+
+            new Thread(() -> {
+                emailService.sendProfileChangeNotification(user.getEmail(), user.getFirstName(), emailMessage);
+            }).start();
             
             return cardId;
             
@@ -367,7 +381,9 @@ public class UserFunctions {
     public boolean deletePaymentCard(String cardId, String customerId) {
         String emailMessage = "A payment card has been deleted from your account.\n";
         User myUser = UserDBFunctions.findUserByUserID(customerId);
-        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        new Thread(() -> {
+            emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        }).start();
         return UserDBFunctions.deletePaymentCard(cardId, customerId);
     }
     
@@ -385,7 +401,9 @@ public class UserFunctions {
                                String state, String postalCode, String country) {
         String emailMessage = "An address has been saved to your account.\n";
         User myUser = UserDBFunctions.findUserByUserID(customerId);
-        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        new Thread(() -> {
+            emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        }).start();
         return UserDBFunctions.saveCustomerAddress(customerId, street, city, state, postalCode, country);
     }
     
@@ -403,7 +421,9 @@ public class UserFunctions {
                                       String state, String postalCode, String country) {
         String emailMessage = "A billing address has been saved to your account.\n";
         User myUser = UserDBFunctions.findUserByUserID(customerId);
-        emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        new Thread(() -> {
+            emailService.sendProfileChangeNotification(myUser.getEmail(), myUser.getFirstName(), emailMessage);
+        }).start();
         return UserDBFunctions.saveCustomerAddressByType(customerId, street, city, state, postalCode, country, "billing");
     }
     

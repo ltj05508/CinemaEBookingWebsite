@@ -19,13 +19,12 @@ public class ShowtimeDBFunctions {
      */
     public static List<Map<String, Object>> getAllShowrooms() {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showrooms = new ArrayList<>();
 
         try {
-            stmt = conn.createStatement();
+            stmt = dcs.getConn().createStatement();
             
             String sql = "SELECT showroom_id, name, seat_count FROM Showrooms ORDER BY showroom_id";
             rs = stmt.executeQuery(sql);
@@ -46,7 +45,7 @@ public class ShowtimeDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close();
-                if (conn != null) conn.close();
+                //if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -65,7 +64,6 @@ public class ShowtimeDBFunctions {
      */
     public static boolean checkConflict(String showroomId, String showtime) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         boolean hasConflict = false;
@@ -75,7 +73,7 @@ public class ShowtimeDBFunctions {
             String sql = "SELECT COUNT(*) as count FROM Showtimes " +
                         "WHERE showroom_id = ? AND showtime = ?";
             
-            pstmt = conn.prepareStatement(sql);
+            pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, showroomId);
             pstmt.setString(2, showtime);
             
@@ -97,7 +95,7 @@ public class ShowtimeDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
+                //if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -116,7 +114,6 @@ public class ShowtimeDBFunctions {
      */
     public static int addShowtime(int movieId, String showroomId, String showtime) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         int showtimeId = -1;
@@ -125,7 +122,7 @@ public class ShowtimeDBFunctions {
             String sql = "INSERT INTO Showtimes (movie_id, showroom_id, showtime) " +
                         "VALUES (?, ?, ?)";
             
-            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            pstmt = dcs.getConn().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             pstmt.setInt(1, movieId);
             pstmt.setString(2, showroomId);
             pstmt.setString(3, showtime);
@@ -148,7 +145,7 @@ public class ShowtimeDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
+                //if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -165,7 +162,6 @@ public class ShowtimeDBFunctions {
      */
     public static List<Map<String, Object>> getShowtimesByMovie(int movieId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> showtimes = new ArrayList<>();
@@ -178,7 +174,7 @@ public class ShowtimeDBFunctions {
                         "WHERE s.movie_id = ? " +
                         "ORDER BY s.showtime";
             
-            pstmt = conn.prepareStatement(sql);
+            pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setInt(1, movieId);
             
             rs = pstmt.executeQuery();
@@ -202,7 +198,7 @@ public class ShowtimeDBFunctions {
             try {
                 if (rs != null) rs.close();
                 if (pstmt != null) pstmt.close();
-                if (conn != null) conn.close();
+                //if (conn != null) conn.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
