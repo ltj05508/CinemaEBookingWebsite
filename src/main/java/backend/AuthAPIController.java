@@ -301,8 +301,9 @@ public class AuthAPIController {
             }
 
             if (loginResult.isSuccess() == 2) {
-                response.put("success", false);
-                response.put("message", "Account is not registered. Please register account before logging in.");
+                String test = "http://localhost:3000/verify-email?email=$" + email;
+                response.put("success", false); //router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirect)}`);
+                response.put("message", "Account is not registered. Please register account before logging in: " + test);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
             
