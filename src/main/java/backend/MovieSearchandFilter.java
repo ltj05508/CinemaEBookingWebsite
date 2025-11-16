@@ -49,6 +49,7 @@ public class MovieSearchandFilter {
              ResultSet rs = stmt.executeQuery()) {
             
             while (rs.next()) {
+                /*
                 Movie movie = new Movie();
                 movie.setMovieId(rs.getInt("movie_id"));
                 movie.setTitle(rs.getString("title"));
@@ -59,6 +60,19 @@ public class MovieSearchandFilter {
                 movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                 movie.setPosterUrl(rs.getString("poster_url"));
                 movie.setTrailerUrl(rs.getString("trailer_url"));
+
+                 */
+                Movie movie = new Movie.MovieBuilder()
+                        .movieId(rs.getInt("movie_id"))
+                        .title(rs.getString("title"))
+                        .genre(rs.getString("genre"))
+                        .rating(rs.getString("rating"))
+                        .movieDescription(rs.getString("description"))
+                        .duration(rs.getInt("duration_minutes") + "")
+                        .isCurrentlyShowing(rs.getBoolean("currently_showing"))
+                        .posterUrl(rs.getString("poster_url"))
+                        .trailerUrl(rs.getString("trailer_url"))
+                        .build();
                 
                 String showtimes = rs.getString("showtimes");
                 movie.setShowtimes(showtimes != null ? showtimes : "TBA");
@@ -110,6 +124,7 @@ public class MovieSearchandFilter {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
+                    /*
                     Movie movie = new Movie();
                     movie.setMovieId(rs.getInt("movie_id"));
                     movie.setTitle(rs.getString("title"));
@@ -120,6 +135,20 @@ public class MovieSearchandFilter {
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
+                    */
+
+                    Movie movie = new Movie.MovieBuilder()
+                            .movieId(rs.getInt("movie_id"))
+                            .title(rs.getString("title"))
+                            .genre(rs.getString("genre"))
+                            .rating(rs.getString("rating"))
+                            .movieDescription(rs.getString("description"))
+                            .duration(rs.getInt("duration_minutes") + "")
+                            .isCurrentlyShowing(rs.getBoolean("currently_showing"))
+                            .posterUrl(rs.getString("poster_url"))
+                            .trailerUrl(rs.getString("trailer_url"))
+                            .build();
+
                     
                     String showtimes = rs.getString("showtimes");
                     movie.setShowtimes(showtimes != null ? showtimes : "TBA");
@@ -173,6 +202,7 @@ public class MovieSearchandFilter {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
+                    /*
                     Movie movie = new Movie();
                     movie.setMovieId(rs.getInt("movie_id"));
                     movie.setTitle(rs.getString("title"));
@@ -183,6 +213,19 @@ public class MovieSearchandFilter {
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
+                     */
+
+                    Movie movie = new Movie.MovieBuilder()
+                            .movieId(rs.getInt("movie_id"))
+                            .title(rs.getString("title"))
+                            .genre(rs.getString("genre"))
+                            .rating(rs.getString("rating"))
+                            .movieDescription(rs.getString("description"))
+                            .duration(rs.getInt("duration_minutes") + "")
+                            .isCurrentlyShowing(rs.getBoolean("currently_showing"))
+                            .posterUrl(rs.getString("poster_url"))
+                            .trailerUrl(rs.getString("trailer_url"))
+                            .build();
                     
                     String showtimes = rs.getString("showtimes");
                     movie.setShowtimes(showtimes != null ? showtimes : "TBA");
@@ -230,6 +273,7 @@ public class MovieSearchandFilter {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
+                    /*
                     Movie movie = new Movie();
                     movie.setMovieId(rs.getInt("movie_id"));
                     movie.setTitle(rs.getString("title"));
@@ -240,6 +284,19 @@ public class MovieSearchandFilter {
                     movie.setCurrentlyShowing(rs.getBoolean("currently_showing"));
                     movie.setPosterUrl(rs.getString("poster_url"));
                     movie.setTrailerUrl(rs.getString("trailer_url"));
+                     */
+
+                    Movie movie = new Movie.MovieBuilder()
+                            .movieId(rs.getInt("movie_id"))
+                            .title(rs.getString("title"))
+                            .genre(rs.getString("genre"))
+                            .rating(rs.getString("rating"))
+                            .movieDescription(rs.getString("description"))
+                            .duration(rs.getInt("duration_minutes") + "")
+                            .isCurrentlyShowing(rs.getBoolean("currently_showing"))
+                            .posterUrl(rs.getString("poster_url"))
+                            .trailerUrl(rs.getString("trailer_url"))
+                            .build();
                     
                     String showtimes = rs.getString("showtimes");
                     movie.setShowtimes(showtimes != null ? showtimes : "TBA");
