@@ -29,12 +29,12 @@ public class EmailService {
             "Hello %s,\n\n" +
             "Thank you for registering with Cinema E-Booking!\n\n" +
             "Your verification code is: %s\n\n" +
-            "Please enter this code on the verification page to activate your account.\n" +
+            "Please enter this code on the verification page to activate your account: http://localhost:3000/verify-email?email=$%s\n" +
             "This code will expire in 24 hours.\n\n" +
             "If you did not create this account, please ignore this email.\n\n" +
             "Best regards,\n" +
             "Cinema E-Booking Team",
-            firstName, verificationCode
+            firstName, verificationCode, toEmail
         );
         
         sendEmail(toEmail, subject, body);
