@@ -7,14 +7,16 @@ import Link from "next/link";
 import { getMovieById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import type { Movie } from "@/types/cinema";
+import { getSeats } from "@/lib/bookingClient";
 
 type PageProps = {
   // ⬇️ params is now a Promise in Next 15
-  params: Promise<{ id: string; showtime: string }>;
+  params: Promise<{ id: string; showtime: string }>; //movie_id, Name and showtime of movie
 };
 
 type SeatId = string;
 
+//Change below by calling getSeats
 const ROWS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const COLS = 12;
 const PRICE_PER_SEAT = 12.0;
@@ -102,6 +104,7 @@ export default function BookingPage({ params }: PageProps) {
 
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">Select your seats</h1>
+          <h1 className="text-2xl font-semibold">{id}</h1>
           <p className="opacity-70">
             {movie.title} • {showtime}
           </p>

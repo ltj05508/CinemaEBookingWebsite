@@ -26,7 +26,6 @@ public class PromotionDBFunctions {
     public static String createPromotion(String code, String description, double discountPercent, 
                                         String validFrom, String validTo) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         String promoId = UUID.randomUUID().toString();
 
@@ -34,7 +33,7 @@ public class PromotionDBFunctions {
             String sql = "INSERT INTO Promotions (promo_id, code, description, discount_percent, valid_from, valid_to) " +
                         "VALUES (?, ?, ?, ?, ?, ?)";
             
-            pstmt = conn.prepareStatement(sql);
+            pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, promoId);
             pstmt.setString(2, code);
             pstmt.setString(3, description);
@@ -70,13 +69,12 @@ public class PromotionDBFunctions {
      */
     public static List<Map<String, Object>> getAllPromotions() {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         Statement stmt = null;
         ResultSet rs = null;
         List<Map<String, Object>> promotions = new ArrayList<>();
 
         try {
-            stmt = conn.createStatement();
+            stmt = dcs.getConn().createStatement();
             
             String sql = "SELECT promo_id, code, description, discount_percent, valid_from, valid_to " +
                         "FROM Promotions ORDER BY valid_from DESC";
@@ -117,7 +115,6 @@ public class PromotionDBFunctions {
      */
     public static Map<String, Object> getPromotionByCode(String code) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
-        Connection conn = dcs.getConn();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Map<String, Object> promotion = null;
@@ -126,7 +123,7 @@ public class PromotionDBFunctions {
             String sql = "SELECT promo_id, code, description, discount_percent, valid_from, valid_to " +
                         "FROM Promotions WHERE code = ?";
             
-            pstmt = conn.prepareStatement(sql);
+            pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, code);
             
             rs = pstmt.executeQuery();
