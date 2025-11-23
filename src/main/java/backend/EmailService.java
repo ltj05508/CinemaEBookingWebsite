@@ -133,6 +133,43 @@ public class EmailService {
     }
     
     /**
+     * Send booking confirmation email with order details.
+     * @param toEmail Recipient email address
+     * @param firstName User's first name
+     * @param bookingId Booking confirmation ID
+     * @param movieTitle Movie title
+     * @param showtime Showtime (e.g., "2:00 PM")
+     * @param seats List of seat IDs (e.g., ["A1", "A2", "B5"])
+     * @param totalPrice Total booking price
+     */
+    public void sendBookingConfirmationEmail(String toEmail, String firstName, String bookingId, 
+                                            String movieTitle, String showtime, 
+                                            java.util.List<String> seats, double totalPrice) {
+        String subject = "Booking Confirmation - " + movieTitle;
+        String seatsList = String.join(", ", seats);
+        
+        String body = String.format(
+            "Hello %s,\n\n" +
+            "Thank you for your booking! Your tickets have been confirmed.\n\n" +
+            "BOOKING DETAILS:\n" +
+            "================\n" +
+            "Booking ID: %s\n" +
+            "Movie: %s\n" +
+            "Showtime: %s\n" +
+            "Seats: %s\n" +
+            "Total Price: $%.2f\n\n" +
+            "Please arrive at least 15 minutes before showtime.\n" +
+            "Show your booking ID at the box office to collect your tickets.\n\n" +
+            "We look forward to seeing you at the cinema!\n\n" +
+            "Best regards,\n" +
+            "Cinema E-Booking Team",
+            firstName, bookingId, movieTitle, showtime, seatsList, totalPrice
+        );
+        
+        sendEmail(toEmail, subject, body);
+    }
+    
+    /**
      * Send a generic email using Gmail services.
      * @param to Recipient email address
      * @param subject Email subject

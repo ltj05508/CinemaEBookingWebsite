@@ -1,13 +1,16 @@
 package backend;
 
 import jakarta.validation.constraints.Email;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.sql.*;
 
 /**
  * Service layer for booking-related business logic.
@@ -17,6 +20,9 @@ public class BookingFunctions {
     public BookingFunctions() { }
 
     private BookingDBFunctions bookingDBFunctions = new BookingDBFunctions();
+    
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Get showroom with seat availability for a specific movie and showtime.
@@ -164,6 +170,83 @@ public class BookingFunctions {
             System.err.println("Error retrieving booking: " + e.getMessage());
             e.printStackTrace();
             return null;
+        }
+    }
+    
+    /**
+     * Send booking confirmation email to user.
+     * 
+     * @param bookingId Booking confirmation ID
+     * @param email User's email address
+     * @param firstName User's first name
+     * @param movieId Movie ID
+     * @param showtimeId Showtime ID
+     * @param tickets List of tickets with seat and type information
+     */
+    public void sendBookingConfirmation(String bookingId, String email, String firstName,
+                                       Integer movieId, Integer showtimeId,
+                                       List<Map<String, String>> tickets) {
+        try {
+            // Get movie details
+            MovieSearchandFilter movieService = new MovieSearchandFilter();
+            Movie movie = movieService.getMovieById(movieId);
+            String movieTitle = (movie != null) ? movie.getTitle() : "Movie #" + movieId;
+            
+            // Get showtime details
+            Connection conn = DatabaseConnectSingleton.getInstance().getConn();
+            String sql = "SELECT showtime FROM Showtimes WHERE showtime_id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, showtimeId);
+            ResultSet rs = pstmt.executeQuery();
+            
+            String showtime = "TBA";
+            if (rs.next()) {
+                // Convert from TIME to readable format
+                Time time = rs.getTime("showtime");
+                showtime = time.toString(); // Will be "14:00:00"
+                // Convert to 12-hour format
+                DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("h:mm a");
+                LocalTime localTime = time.toLocalTime();
+                showtime = localTime.format(outputFormat); // "2:00 PM"
+            }
+            rs.close();
+            pstmt.close();
+            
+            // Extract seat IDs
+            List<String> seatIds = new ArrayList<>();
+            double totalPrice = 0.0;
+            
+            Map<String, Double> prices = Map.of(
+                "adult", 12.00,
+                "senior", 10.00,
+                "child", 8.00
+            );
+            
+            for (Map<String, String> ticket : tickets) {
+                String seatId = ticket.get("seatId");
+                String type = ticket.get("type");
+                
+                if (seatId != null) {
+                    seatIds.add(seatId);
+                }
+                
+                if (type != null && prices.containsKey(type)) {
+                    totalPrice += prices.get(type);
+                } else {
+                    totalPrice += 12.00;
+                }
+            }
+            
+            // Send email
+            emailService.sendBookingConfirmationEmail(
+                email, firstName, bookingId, movieTitle, showtime, seatIds, totalPrice
+            );
+            
+            System.out.println("Booking confirmation email sent to: " + email);
+            
+        } catch (Exception e) {
+            System.err.println("Error sending booking confirmation: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

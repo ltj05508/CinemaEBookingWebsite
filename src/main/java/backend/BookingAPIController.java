@@ -160,6 +160,19 @@ public class BookingAPIController {
                 return ResponseEntity.badRequest().body(response);
             }
             
+            // Send confirmation email
+            try {
+                String email = (String) session.getAttribute("email");
+                String firstName = (String) session.getAttribute("firstName");
+                
+                if (email != null && firstName != null) {
+                    bookingFunctions.sendBookingConfirmation(bookingId, email, firstName, movieId, showtimeId, tickets);
+                }
+            } catch (Exception e) {
+                // Log error but don't fail the booking
+                System.err.println("Failed to send confirmation email: " + e.getMessage());
+            }
+            
             response.put("success", true);
             response.put("message", "Booking created successfully");
             response.put("bookingId", bookingId);
