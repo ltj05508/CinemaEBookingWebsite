@@ -81,6 +81,114 @@ public class BookingAPIController {
         }
     }
 
+    // ==================== BOOKING MANAGEMENT ====================
+
+    /**
+     * Create a new booking with tickets.
+     * POST /api/booking/create
+     * Body: {
+     *   "movieId": 1,
+     *   "showtimeId": 1,
+     *   "seats": ["A1", "A2"],
+     *   "tickets": [
+     *     {"seatId": "A1", "type": "adult"},
+     *     {"seatId": "A2", "type": "child"}
+     *   ],
+     *   "promoCode": "PROMO123" (optional)
+     * }
+     */
+    @PostMapping("/create")
+    public ResponseEntity<Map<String, Object>> createBooking(@RequestBody Map<String, Object> request,
+                                                             HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Check if user is logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "You must be logged in to create a booking");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            
+            // Extract booking data
+            Integer movieId = (Integer) request.get("movieId");
+            Integer showtimeId = (Integer) request.get("showtimeId");
+            List<Map<String, String>> tickets = (List<Map<String, String>>) request.get("tickets");
+            String promoCode = (String) request.get("promoCode");
+            
+            // Validate required fields
+            if (movieId == null || showtimeId == null || tickets == null || tickets.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Missing required fields (movieId, showtimeId, tickets)");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Create booking through service layer
+            String bookingId = bookingFunctions.createBooking(userId, movieId, showtimeId, tickets, promoCode);
+            
+            if (bookingId == null) {
+                response.put("success", false);
+                response.put("message", "Failed to create booking. Seats may already be taken.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            response.put("success", true);
+            response.put("message", "Booking created successfully");
+            response.put("bookingId", bookingId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get booking details by ID.
+     * GET /api/booking/{bookingId}
+     */
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<Map<String, Object>> getBooking(@PathVariable String bookingId,
+                                                          HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Check if user is logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "You must be logged in to view bookings");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            
+            // Get booking details
+            Map<String, Object> booking = bookingFunctions.getBookingById(bookingId, userId);
+            
+            if (booking == null) {
+                response.put("success", false);
+                response.put("message", "Booking not found or access denied");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+            
+            response.put("success", true);
+            response.put("booking", booking);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     // ==================== SHOWTIME MANAGEMENT ====================
 
     /**
