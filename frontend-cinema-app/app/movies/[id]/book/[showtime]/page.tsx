@@ -10,10 +10,17 @@ import type { Movie } from "@/types/cinema";
 import { getSeats } from "@/lib/bookingClient";
 import type { Showroom } from "@/lib/bookingClient";
 
+/*
+type PageProps = {
+  params: { id: string; showtime: string };
+};
+*/
 
 type PageProps = {
-  params: { id: string; showtime: string }; // <-- FIXED
-};
+  params: { id: string; showtime: string };
+}
+
+  // Now you can safely use id and showtime
 
 /*
 export default function BookingPage({ params }: PageProps) {
@@ -31,6 +38,15 @@ export default function BookingPage({ params }: PageProps) {
   // ⬇️ unwrap promised params on the client
   const { id, showtime: rawShowtime } = params;
   const showtime = decodeURIComponent(rawShowtime);
+
+  //const { id, showtime } = params;
+  //const seats: Showroom | null = getSeats(id, showtime);
+
+  /*
+  if (!seats) {
+    return <div>No seats available or failed to fetch seats.</div>;
+  }
+    */
   
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loadingMovie, setLoadingMovie] = useState(true);
@@ -49,6 +65,7 @@ export default function BookingPage({ params }: PageProps) {
   const COLS = showroom?.numOfCols ?? 0;                 
   const PRICE_PER_SEAT = 12.0;
 
+  
   useEffect(() => {
     async function fetchSeats() {
       try {
@@ -60,6 +77,7 @@ export default function BookingPage({ params }: PageProps) {
     }
     fetchSeats();
   }, []);
+  
 
   useEffect(() => {
     async function fetchMovie() {
@@ -146,7 +164,7 @@ export default function BookingPage({ params }: PageProps) {
 
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">Select your seats</h1>
-          <h1 className="text-2xl font-semibold">{showroom?.numOfRows}</h1>
+          <h1 className="text-2xl font-semibold">{id}</h1>
           <p className="opacity-70">
             {movie.title} • {showtime}
           </p>

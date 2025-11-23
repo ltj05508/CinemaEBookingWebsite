@@ -36,7 +36,7 @@ public class ConnectToDatabase {
          */
 
         BookingFunctions bf = new BookingFunctions();
-        Showroom test = bf.getSeatsForShow("1", "2:00 AM");
+        Showroom test = bf.getSeatsForShow("3", "03:00 PM");
         System.out.println(test);
 
 

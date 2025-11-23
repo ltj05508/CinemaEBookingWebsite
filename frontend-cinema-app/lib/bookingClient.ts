@@ -37,6 +37,7 @@ export async function getSeats(id: string, showtime: string) {   //Promise<Showr
   
 */
 
+/*
 export type Showroom = {
   showroomId: number;
   name: string;
@@ -53,13 +54,16 @@ export async function getSeats(id: string, showtime: string) {   //Promise<Showr
   try {
     const res = await fetch(`${API_BASE}/api/booking/seats/${id}/${showtime}`, {          
       method: "GET",
-      credentials: "include",
+      //credentials: "include",
       cache: "no-store",
     });
 
     const data = await res.json();
 
-    if (!data.success || !data.showroom || data.showroom.length === 0)
+    console.log(res.status, res.statusText);
+    if (!res.ok) throw new Error("Failed to fetch seats");
+
+    if (!data.success || !data.showroom) // || data.showroom.length === 0
       return null;
 
     const s = data.showroom;
@@ -67,11 +71,54 @@ export async function getSeats(id: string, showtime: string) {   //Promise<Showr
       showroomId: Number(s.showroomId),
       name: s.name,
       seatCount: Number(s.seatCount),
-      numOfRows: Number(s.numOfRows),     // FIXED
-      numOfCols: Number(s.numOfCols),     // FIXED
+      numOfRows: Number(s.numOfRows),     
+      numOfCols: Number(s.numOfCols),     
       theatreId: s.theatreId
     };
     return result;
+  } catch (err) {
+    console.error("Error fetching seats:", err);
+    return null;
+  }
+}
+  */
+
+export interface Showroom {
+  showroomId: number;
+  name: string;
+  seatCount: number;
+  numOfRows: number;
+  numOfCols: number;
+  theatreId: number;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
+
+export async function getSeats(id: string, showtime: string): Promise<Showroom | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/booking/seats/${id}/${showtime}`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.showroom) {
+      console.error("Backend returned error:", data);
+      return null;
+    }
+
+    const s = data.showroom;
+
+    return {
+      showroomId: Number(s.showroomId),
+      name: s.name,
+      seatCount: Number(s.seatCount),
+      numOfRows: Number(s.numOfRows),
+      numOfCols: Number(s.numOfCols),
+      theatreId: s.theatreId,
+    };
   } catch (err) {
     console.error("Error fetching seats:", err);
     return null;
