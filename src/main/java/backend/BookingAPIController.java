@@ -55,6 +55,32 @@ public class BookingAPIController {
         }
     }
 
+    /**
+     * Get ticket pricing information.
+     * GET /api/booking/prices
+     */
+    @GetMapping("/prices")
+    public ResponseEntity<Map<String, Object>> getTicketPrices() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Map<String, Double> prices = new HashMap<>();
+            prices.put("adult", 12.00);
+            prices.put("senior", 10.00);
+            prices.put("child", 8.00);
+            
+            response.put("success", true);
+            response.put("prices", prices);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     // ==================== SHOWTIME MANAGEMENT ====================
 
     /**
