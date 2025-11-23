@@ -31,12 +31,10 @@ public class BookingAPIController {
 
     /**
      * Returns the seats (available/unavailable) for a selected showtime.
-     * GET /api/booking/seats
-     * Body: { "title": "Movie Title", "genre": "Action", "rating": "PG-13",
-     *         "description": "...", "durationMinutes": 120,
-     *         "posterUrl": "...", "trailerUrl": "...", "currentlyShowing": true }
+     * GET /api/booking/seats/{id}/{showtime}
+     * Path variables: id (movie ID), showtime (formatted time like "2:00 PM")
      */
-    @GetMapping("/seats/{id}/{showroom}")
+    @GetMapping("/seats/{id}/{showtime}")
     public ResponseEntity<Map<String, Object>> getSeats(
             @PathVariable String id,
             @PathVariable String showtime) {
