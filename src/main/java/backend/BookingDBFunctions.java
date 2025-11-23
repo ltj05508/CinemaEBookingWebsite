@@ -29,18 +29,22 @@ public class BookingDBFunctions {
             //String sql = "SELECT * FROM Showtimes WHERE movie_id = ?";
 
             //For the love of god come up with a better method
+            /*
             String[] split = showtime.split(":");
             int temp = Integer.parseInt(split[0]);
             if (temp < 8) {
                 temp += 12;
                 showtime = temp + ":" + split[1];
             }
+            */
 
-            String sql = "SELECT showroom_id FROM Showtimes WHERE movie_id = ? AND showtime = CAST('14:00:00' AS TIME)";
+
+            String sql = "SELECT showroom_id FROM Showtimes WHERE movie_id = ? AND showtime = CAST(? AS TIME)";
 
 
             pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, movieId);
+            pstmt.setString(2, showtime);
 
             rs = pstmt.executeQuery();
 

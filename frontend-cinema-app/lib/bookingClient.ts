@@ -49,9 +49,9 @@ export type Showroom = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
 
-export async function getSeats() {   //Promise<Showroom | null> {
+export async function getSeats(id: string, showtime: string) {   //Promise<Showroom | null> {
   try {
-    const res = await fetch('${API_BASE}/api/booking/seats?id={id}&showtime={showtime}', {          
+    const res = await fetch(`${API_BASE}/api/booking/seats/${id}/${showtime}`, {          
       method: "GET",
       credentials: "include",
       cache: "no-store",
@@ -62,8 +62,8 @@ export async function getSeats() {   //Promise<Showroom | null> {
     if (!data.success || !data.showroom || data.showroom.length === 0)
       return null;
 
-    const s = data.showroom[0];
-    return {
+    const s = data.showroom;
+    const result = {
       showroomId: Number(s.showroomId),
       name: s.name,
       seatCount: Number(s.seatCount),
@@ -71,6 +71,7 @@ export async function getSeats() {   //Promise<Showroom | null> {
       numOfCols: Number(s.numOfCols),     // FIXED
       theatreId: s.theatreId
     };
+    return result;
   } catch (err) {
     console.error("Error fetching seats:", err);
     return null;

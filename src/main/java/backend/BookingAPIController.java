@@ -21,6 +21,7 @@ import java.util.Map;
 public class BookingAPIController {
     @Autowired
     private EmailService emailService;
+    @Autowired
     private BookingFunctions bookingFunctions;
 
 
@@ -35,18 +36,15 @@ public class BookingAPIController {
      *         "description": "...", "durationMinutes": 120,
      *         "posterUrl": "...", "trailerUrl": "...", "currentlyShowing": true }
      */
-    @PostMapping("/seats{id}&{showtime}") //{id}&{showtime}
-    public ResponseEntity<Map<String, Object>> getSeats(@PathVariable String id, @PathVariable String showtime) {
+    @GetMapping("/seats/{id}/{showroom}")
+    public ResponseEntity<Map<String, Object>> getSeats(
+            @PathVariable String id,
+            @PathVariable String showtime) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String movieId = id;
-            //String showroom_id = showtime;
-
-            Showroom showroom = bookingFunctions.getSeatsForShow(movieId, showtime);
-
-
-
+            System.out.println("\nIn BookingAPIController\n");
+            Showroom showroom = bookingFunctions.getSeatsForShow(id, showtime);
             response.put("success", true);
             response.put("showroom", showroom);
 

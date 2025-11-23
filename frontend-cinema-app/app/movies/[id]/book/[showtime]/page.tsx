@@ -29,11 +29,10 @@ type SeatId = string;
 
 export default function BookingPage({ params }: PageProps) {
   // ⬇️ unwrap promised params on the client
-  const { id, showtime: rawShowtime } = params; // <-- FIXED
+  const { id, showtime: rawShowtime } = params;
   const showtime = decodeURIComponent(rawShowtime);
   
   const [movie, setMovie] = useState<Movie | null>(null);
-  //const [loading, setLoading] = useState(true);
   const [loadingMovie, setLoadingMovie] = useState(true);
   const [loadingShowroom, setLoadingShowroom] = useState(true);
   const [selected, setSelected] = useState<Set<SeatId>>(new Set());
@@ -46,14 +45,14 @@ export default function BookingPage({ params }: PageProps) {
     return Array.from({ length: showroom.numOfRows }, (_, i) =>
     String.fromCharCode(65 + i)
   );
-  }, [showroom]);                                    //["A", "B", "C", "D", "E", "F", "G", "H"];
-  const COLS = showroom?.numOfCols ?? 0;                        //12;
+  }, [showroom]);                                    
+  const COLS = showroom?.numOfCols ?? 0;                 
   const PRICE_PER_SEAT = 12.0;
 
   useEffect(() => {
     async function fetchSeats() {
       try {
-        const room = await getSeats();
+        const room = await getSeats(id, showtime);
         setShowroom(room);
       } finally {
         setLoadingShowroom(false);
@@ -76,33 +75,8 @@ export default function BookingPage({ params }: PageProps) {
   
 
   // Always call useMemo, even if movie is null (to maintain hook order)
-  /*
   const reservedSeats = useMemo(() => {
-    if (!movie) return new Set<SeatId>(); // Return empty set if no movie
-    
-    const base = (movie.id + "|" + showtime)
-      .split("")
-      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    const picks: SeatId[] = [];
-    const totalSeats = ROWS.length * COLS;
-    const target = Math.max(6, Math.floor(totalSeats * 0.1));
-
-    let n = base;
-    while (picks.length < target) {
-      n = (n * 1103515245 + 12345) & 0x7fffffff;
-      const idx = n % totalSeats;
-      const r = Math.floor(idx / COLS);
-      const c = (idx % COLS) + 1;
-      const seat: SeatId = `${ROWS[r]}${c}`;
-      if (!picks.includes(seat)) picks.push(seat);
-    }
-    return new Set(picks);
-  }, [movie?.id, showtime]);
-
-  */
-
-  const reservedSeats = useMemo(() => {
-    if (!movie || !showroom) return new Set<SeatId>(); // <-- FIX
+    if (!movie || !showroom) return new Set<SeatId>();
     
     const ROWS_LOCAL = Array.from({ length: showroom.numOfRows }, (_, i) =>
       String.fromCharCode(65 + i)
@@ -111,7 +85,7 @@ export default function BookingPage({ params }: PageProps) {
     const COLS_LOCAL = showroom.numOfCols;
     const totalSeats = ROWS_LOCAL.length * COLS_LOCAL;
   
-    if (totalSeats === 0) return new Set<SeatId>(); // <-- SAFETY FIX
+    if (totalSeats === 0) return new Set<SeatId>();
   
     const base = (movie.id + "|" + showtime)
       .split("")
@@ -172,7 +146,7 @@ export default function BookingPage({ params }: PageProps) {
 
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">Select your seats</h1>
-          <h1 className="text-2xl font-semibold">{id}</h1>
+          <h1 className="text-2xl font-semibold">{showroom?.numOfRows}</h1>
           <p className="opacity-70">
             {movie.title} • {showtime}
           </p>
