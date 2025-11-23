@@ -63,6 +63,22 @@ public class BookingFunctions {
     }
 
     /**
+     * Get list of already-booked seat IDs for a specific showtime.
+     * 
+     * @param showtimeId The showtime ID to check
+     * @return List of seat IDs that are already booked
+     */
+    public List<String> getBookedSeats(int showtimeId) {
+        try {
+            return bookingDBFunctions.getBookedSeats(showtimeId);
+        } catch (Exception e) {
+            System.err.println("Error getting booked seats: " + e.getMessage());
+            e.printStackTrace();
+            return List.of(); // Return empty list on error
+        }
+    }
+
+    /**
      * Create a new booking with tickets for selected seats.
      * 
      * @param userId User creating the booking

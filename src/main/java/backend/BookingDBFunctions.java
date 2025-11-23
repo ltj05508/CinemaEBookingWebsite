@@ -83,6 +83,45 @@ public class BookingDBFunctions {
     }
 
     /**
+     * Get list of seat IDs that are already booked for a specific showtime.
+     * 
+     * @param showtimeId The showtime ID
+     * @return List of booked seat IDs
+     */
+    public List<String> getBookedSeats(int showtimeId) {
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<String> bookedSeats = new ArrayList<>();
+
+        try {
+            String sql = "SELECT seat_id FROM Tickets WHERE showtime_id = ?";
+            pstmt = dcs.getConn().prepareStatement(sql);
+            pstmt.setInt(1, showtimeId);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                bookedSeats.add(rs.getString("seat_id"));
+            }
+
+            System.out.println("Found " + bookedSeats.size() + " booked seats for showtime " + showtimeId);
+            return bookedSeats;
+
+        } catch (SQLException e) {
+            System.err.println("Error getting booked seats: " + e.getMessage());
+            e.printStackTrace();
+            return bookedSeats;
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
      * Create a new booking with tickets.
      * 
      * @param userId Customer ID

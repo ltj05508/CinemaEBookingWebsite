@@ -56,6 +56,31 @@ public class BookingAPIController {
     }
 
     /**
+     * Get seat availability for a specific showtime.
+     * Returns list of already-booked seat IDs.
+     * GET /api/booking/availability/{showtimeId}
+     */
+    @GetMapping("/availability/{showtimeId}")
+    public ResponseEntity<Map<String, Object>> getSeatAvailability(@PathVariable int showtimeId) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<String> bookedSeats = bookingFunctions.getBookedSeats(showtimeId);
+            
+            response.put("success", true);
+            response.put("bookedSeats", bookedSeats);
+            response.put("showtimeId", showtimeId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Get ticket pricing information.
      * GET /api/booking/prices
      */
