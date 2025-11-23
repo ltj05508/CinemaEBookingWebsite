@@ -29,7 +29,15 @@ public class ConnectToDatabase {
         conn = dcs.getConn();
         */
 
+        /*
+        BookingDBFunctions myBDBF = new BookingDBFunctions();
+        Showroom test = myBDBF.getSeatsForShow("1", "2:00");
+        System.out.println(test);
+         */
 
+        BookingFunctions bf = new BookingFunctions();
+        Showroom test = bf.getSeatsForShow("1", "2:00");
+        System.out.println(test);
 
 
         /*

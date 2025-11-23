@@ -80,7 +80,9 @@ CREATE TABLE IF NOT EXISTS Theatres (
 CREATE TABLE IF NOT EXISTS Showrooms (
     showroom_id    VARCHAR(50) PRIMARY KEY,
     name          VARCHAR(255),
-    seat_count     INT,
+    seat_count     	INT,
+    num_of_rows		INT,
+    num_of_cols 	INT,
     theatre_id     VARCHAR(50) NOT NULL,
     FOREIGN KEY (theatre_id) REFERENCES Theatres(theatre_id)
         ON DELETE CASCADE
@@ -160,11 +162,11 @@ VALUES
 (1, 'Theatre1', '12 Earnhart Lane'),
 (2, 'Theatre2', '213 Cricket Drive');
 
-INSERT INTO Showrooms (showroom_id, name, seat_count, theatre_id)
+INSERT INTO Showrooms (showroom_id, name, seat_count, num_of_rows, num_of_cols, theatre_id)
 VALUES
-(1, 'Showroom1', 50, 1),
-(2, 'Showroom2', 65, 1),
-(3, 'RoyalShowroom', 100, 2);
+('1', 'Showroom1', 96, 12, 8, 1),
+('2', 'Showroom2', 98, 14, 7, 1),
+('3', 'RoyalShowroom', 120, 15, 8, 2);
 
 -- Insert showtimes (only once per movie-time combination)
 INSERT INTO Showtimes (movie_id, showroom_id, showtime) VALUES

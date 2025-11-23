@@ -13,16 +13,22 @@ import org.springframework.stereotype.Service;
 public class BookingFunctions {
     public BookingFunctions() { }
 
-    private BookingDBFunctions bookingDBFunctions;
+    private BookingDBFunctions bookingDBFunctions = new BookingDBFunctions();
 
 
-    public int[][] getSeatsForShow(String movieId, String showroom_id) {
-            if (movieId != null && showroom_id != null) {
-                return bookingDBFunctions.getSeatsForShow(movieId, showroom_id);
-            }
-            else {
-                return null;
-            }
+    public Showroom getSeatsForShow(String movieId, String showroom_id) {
+        Showroom activeShowroom = null;
+        if (movieId != null && showroom_id != null) {
+            activeShowroom = bookingDBFunctions.getSeatsForShow(movieId, showroom_id);
+        }
+
+        if (activeShowroom != null) {
+            return activeShowroom;
+        }
+
+        System.err.println("\nProblem in getSeatsForShow function in BookingFunctions class!\n");
+        return null;
+
     }
 
 

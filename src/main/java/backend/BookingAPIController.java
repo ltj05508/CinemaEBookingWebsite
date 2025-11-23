@@ -35,16 +35,20 @@ public class BookingAPIController {
      *         "description": "...", "durationMinutes": 120,
      *         "posterUrl": "...", "trailerUrl": "...", "currentlyShowing": true }
      */
-    @PostMapping("/seats")
-    public ResponseEntity<Map<String, Object>> getSeats(@RequestBody Map<String, Object> request,
-                                                         HttpSession session) {
+    @PostMapping("/seats{id}&{showtime}") //{id}&{showtime}
+    public ResponseEntity<Map<String, Object>> getSeats(@PathVariable String id, @PathVariable String showtime) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String movieId = (String) session.getAttribute("movieId");
-            String showroom_id = (String) session.getAttribute("showtime");
+            String movieId = id;
+            //String showroom_id = showtime;
 
-            int[][] seatGrid = bookingFunctions.getSeatsForShow(movieId, showroom_id);
+            Showroom showroom = bookingFunctions.getSeatsForShow(movieId, showtime);
+
+
+
+            response.put("success", true);
+            response.put("showroom", showroom);
 
             return ResponseEntity.ok(response);
 

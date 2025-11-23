@@ -1,51 +1,82 @@
 // app/movies/[id]/book/[showtime]/page.tsx
 "use client";
 
-import * as React from "react"; // ⬅️ add this
-import { useMemo, useState, useEffect } from "react";
+//import * as React from "react"; // ⬅️ add this
+import { use, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { getMovieById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import type { Movie } from "@/types/cinema";
 import { getSeats } from "@/lib/bookingClient";
+import type { Showroom } from "@/lib/bookingClient";
+
 
 type PageProps = {
-  // ⬇️ params is now a Promise in Next 15
-  params: Promise<{ id: string; showtime: string }>; //movie_id, Name and showtime of movie
+  params: { id: string; showtime: string }; // <-- FIXED
 };
+
+/*
+export default function BookingPage({ params }: PageProps) {
+  const { id, showtime: rawShowtime } = params; // <-- FIXED
+  const showtime = decodeURIComponent(rawShowtime);
+}
+  */
 
 type SeatId = string;
 
 //Change below by calling getSeats
-const ROWS = ["A", "B", "C", "D", "E", "F", "G", "H"];
-const COLS = 12;
-const PRICE_PER_SEAT = 12.0;
+
 
 export default function BookingPage({ params }: PageProps) {
   // ⬇️ unwrap promised params on the client
-  const { id, showtime: rawShowtime } = React.use(params);
+  const { id, showtime: rawShowtime } = params; // <-- FIXED
   const showtime = decodeURIComponent(rawShowtime);
   
   const [movie, setMovie] = useState<Movie | null>(null);
-  const [loading, setLoading] = useState(true);
+  //const [loading, setLoading] = useState(true);
+  const [loadingMovie, setLoadingMovie] = useState(true);
+  const [loadingShowroom, setLoadingShowroom] = useState(true);
   const [selected, setSelected] = useState<Set<SeatId>>(new Set());
+
+  const [showroom, setShowroom] = useState<Showroom | null>(null);
+  //const [loadingSeats, setLoadingSeats] = useState(true);
+
+  const ROWS = useMemo(() => {
+    if (!showroom) return [];
+    return Array.from({ length: showroom.numOfRows }, (_, i) =>
+    String.fromCharCode(65 + i)
+  );
+  }, [showroom]);                                    //["A", "B", "C", "D", "E", "F", "G", "H"];
+  const COLS = showroom?.numOfCols ?? 0;                        //12;
+  const PRICE_PER_SEAT = 12.0;
+
+  useEffect(() => {
+    async function fetchSeats() {
+      try {
+        const room = await getSeats();
+        setShowroom(room);
+      } finally {
+        setLoadingShowroom(false);
+      }
+    }
+    fetchSeats();
+  }, []);
 
   useEffect(() => {
     async function fetchMovie() {
       try {
         const movieData = await getMovieById(id);
         setMovie(movieData);
-      } catch (error) {
-        console.error('Error fetching movie:', error);
-        setMovie(null);
       } finally {
-        setLoading(false);
+        setLoadingMovie(false);
       }
     }
     fetchMovie();
   }, [id]);
+  
 
   // Always call useMemo, even if movie is null (to maintain hook order)
+  /*
   const reservedSeats = useMemo(() => {
     if (!movie) return new Set<SeatId>(); // Return empty set if no movie
     
@@ -68,7 +99,41 @@ export default function BookingPage({ params }: PageProps) {
     return new Set(picks);
   }, [movie?.id, showtime]);
 
-  if (loading) {
+  */
+
+  const reservedSeats = useMemo(() => {
+    if (!movie || !showroom) return new Set<SeatId>(); // <-- FIX
+    
+    const ROWS_LOCAL = Array.from({ length: showroom.numOfRows }, (_, i) =>
+      String.fromCharCode(65 + i)
+    );
+  
+    const COLS_LOCAL = showroom.numOfCols;
+    const totalSeats = ROWS_LOCAL.length * COLS_LOCAL;
+  
+    if (totalSeats === 0) return new Set<SeatId>(); // <-- SAFETY FIX
+  
+    const base = (movie.id + "|" + showtime)
+      .split("")
+      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  
+    const picks: SeatId[] = [];
+    const target = Math.max(6, Math.floor(totalSeats * 0.1));
+  
+    let n = base;
+    while (picks.length < target) {
+      n = (n * 1103515245 + 12345) & 0x7fffffff;
+      const idx = n % totalSeats;
+      const r = Math.floor(idx / COLS_LOCAL);
+      const c = (idx % COLS_LOCAL) + 1;
+      const seat: SeatId = `${ROWS_LOCAL[r]}${c}`;
+      if (!picks.includes(seat)) picks.push(seat);
+    }
+  
+    return new Set(picks);
+  }, [movie?.id, showtime, showroom]);
+
+  if (loadingMovie || loadingShowroom) {
     return <div className="p-8">Loading...</div>;
   }
   
@@ -81,6 +146,9 @@ export default function BookingPage({ params }: PageProps) {
     else next.add(seat);
     setSelected(next);
   };
+  
+
+  
 
   const selectedArray = Array.from(selected).sort((a, b) => {
     const ra = ROWS.indexOf(a[0]);
