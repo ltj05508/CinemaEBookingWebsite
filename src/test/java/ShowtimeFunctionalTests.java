@@ -2,6 +2,7 @@ package backend;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +14,17 @@ public class ShowtimeFunctionalTests {
     @Autowired
     private TestRestTemplate restTemplate; // kept if we want to extend tests to use REST later
 
+    // Track created entities so each test can clean up after itself
+    private final java.util.List<Integer> createdMovieIds = new java.util.ArrayList<>();
+    private final java.util.List<Integer> createdShowtimeIds = new java.util.ArrayList<>();
+    private final java.util.List<String> createdBookingIds = new java.util.ArrayList<>();
+
     @Test
     public void testSchedulingConflictWithDBFunctions() {
         // Create a test movie
         int movieId = MovieDBFunctions.addMovie("Test Movie Conflict", "Test", "PG", "Desc", 90, "", "", false);
         Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+        createdMovieIds.add(movieId);
 
         // Find a showroom ID
         List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
@@ -27,6 +34,7 @@ public class ShowtimeFunctionalTests {
         // Add initial showtime
         int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "19:00:00");
         Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+        createdShowtimeIds.add(showtimeId);
 
         // Check conflict for same showroom/time
         boolean conflict = ShowtimeDBFunctions.checkConflict(showroomId, "19:00:00");
@@ -38,6 +46,7 @@ public class ShowtimeFunctionalTests {
         // Create a test movie
         int movieId = MovieDBFunctions.addMovie("Test Movie Visibility", "Test", "PG", "Desc", 90, "", "", false);
         Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+        createdMovieIds.add(movieId);
 
         // Use an existing showroom
         List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
@@ -47,6 +56,7 @@ public class ShowtimeFunctionalTests {
         // Add a new showtime for visibility
         int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "20:30:00");
         Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+        createdShowtimeIds.add(showtimeId);
 
         // Get showtimes by movie
         List<Map<String, Object>> showtimes = ShowtimeDBFunctions.getShowtimesByMovie(movieId);
@@ -61,6 +71,7 @@ public class ShowtimeFunctionalTests {
         // Create a test movie and showtime
         int movieId = MovieDBFunctions.addMovie("Test Movie Booking", "Test", "PG", "Desc", 90, "", "", false);
         Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+        createdMovieIds.add(movieId);
 
         List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
         Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
@@ -68,6 +79,7 @@ public class ShowtimeFunctionalTests {
 
         int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "18:45:00");
         Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+        createdShowtimeIds.add(showtimeId);
 
         // Ensure seat exists in the Seats table to satisfy FK constraint before booking
         java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
@@ -87,6 +99,7 @@ public class ShowtimeFunctionalTests {
 
         String bookingId = bookingDB.createBooking("1", showtimeId, 12.00, null, tickets);
         Assertions.assertNotNull(bookingId, "Booking creation failed");
+        createdBookingIds.add(bookingId);
 
         // Check seat availability via BookingFunctions.getBookedSeats (converts PM -> 24hr)
         BookingFunctions bf2 = new BookingFunctions();
@@ -111,6 +124,7 @@ public class ShowtimeFunctionalTests {
         // Create a test movie and showtime
         int movieId = MovieDBFunctions.addMovie("Test Movie Booking Flow", "Test", "PG", "Desc", 90, "", "", false);
         Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+        createdMovieIds.add(movieId);
 
         List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
         Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
@@ -118,6 +132,7 @@ public class ShowtimeFunctionalTests {
 
         int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "21:00:00");
         Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+        createdShowtimeIds.add(showtimeId);
 
         // Ensure seats exist
         java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
@@ -136,6 +151,7 @@ public class ShowtimeFunctionalTests {
         List<Map<String, String>> tickets = List.of(Map.of("seatId", "C3", "type", "adult"));
         String bookingId = bf.createBooking("1", movieId, showtimeId, tickets, null);
         Assertions.assertNotNull(bookingId, "Booking creation failed in service layer");
+        createdBookingIds.add(bookingId);
 
         // Verify booking stored and tickets are present
         BookingDBFunctions bookingDB = new BookingDBFunctions();
@@ -144,5 +160,50 @@ public class ShowtimeFunctionalTests {
         List<Map<String, Object>> storedTickets = (List<Map<String, Object>>) booking.get("tickets");
         Assertions.assertNotNull(storedTickets);
         Assertions.assertTrue(storedTickets.stream().anyMatch(t -> "C3".equals(t.get("seatId"))), "Ticket for C3 not found in stored booking");
+    }
+
+    @AfterEach
+    public void tearDown() {
+        java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
+        java.sql.PreparedStatement pstmt = null;
+        try {
+            // Delete tickets and bookings first
+            for (String bookingId : createdBookingIds) {
+                pstmt = conn.prepareStatement("DELETE FROM Tickets WHERE booking_id = ?");
+                pstmt.setString(1, bookingId);
+                pstmt.executeUpdate();
+                pstmt.close();
+
+                pstmt = conn.prepareStatement("DELETE FROM Bookings WHERE booking_id = ?");
+                pstmt.setString(1, bookingId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+
+            // Delete showtimes
+            for (Integer showtimeId : createdShowtimeIds) {
+                pstmt = conn.prepareStatement("DELETE FROM Showtimes WHERE showtime_id = ?");
+                pstmt.setInt(1, showtimeId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+
+            // Delete movies
+            for (Integer movieId : createdMovieIds) {
+                pstmt = conn.prepareStatement("DELETE FROM Movies WHERE movie_id = ?");
+                pstmt.setInt(1, movieId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (pstmt != null) pstmt.close();
+            } catch (Exception e) { /* ignore */ }
+            createdBookingIds.clear();
+            createdShowtimeIds.clear();
+            createdMovieIds.clear();
+        }
     }
 }
