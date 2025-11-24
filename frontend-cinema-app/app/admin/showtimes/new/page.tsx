@@ -56,26 +56,17 @@ export default function NewShowtimePage() {
         const fd = new FormData(e.currentTarget);
         const movieId = String(fd.get("movieId") || "");
         const showroomId = String(fd.get("showroomId") || "");
-        const startLocal = String(fd.get("startLocal") || "");
+        const showtime = String(fd.get("showtime") || "");
 
-        if (!movieId || !showroomId || !startLocal) {
+        if (!movieId || !showroomId || !showtime) {
             setErr("All fields are required.");
             setSubmitting(false);
             return;
         }
 
-        // Convert local datetime to ISO string
-        const startTimeIso = new Date(startLocal).toISOString();
-
         try {
-            const conflict = await hasConflict(showroomId, startTimeIso);
-            if (conflict) {
-                setErr("Conflict: Another movie is already scheduled at that date/time in this showroom.");
-                setSubmitting(false);
-                return;
-            }
-
-            const payload = { movieId, showroomId, startTimeIso };
+            // Optionally, you could add a conflict check here if needed
+            const payload = { movieId, showroomId, showtime };
             const res = await fetch("/api/admin/showtimes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
