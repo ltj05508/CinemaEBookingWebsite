@@ -45,7 +45,7 @@ export default function NewShowtimePage() {
 
     async function hasConflict(showroomId: string, startIso: string) {
         const dateOnly = startIso.slice(0, 10);
-        const res = await fetch(`${API_BASE}/api/showtimes?showroomId=${encodeURIComponent(showroomId)}&date=${encodeURIComponent(dateOnly)}`);
+        const res = await fetch(`${API_BASE}/api/auth/showtimes?showroomId=${encodeURIComponent(showroomId)}&date=${encodeURIComponent(dateOnly)}`);
         if (!res.ok) return false;
         const list = await res.json();
         return list.some((s: any) => String(s.showroomId) === showroomId && String(s.startTimeIso) === startIso);
@@ -69,7 +69,7 @@ export default function NewShowtimePage() {
         try {
             // Optionally, you could add a conflict check here if needed
             const payload = { movieId, showroomId, showtime };
-            const res = await fetch(`${API_BASE}/api/admin/showtimes`, {
+            const res = await fetch(`${API_BASE}/api/auth/showtimes`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
