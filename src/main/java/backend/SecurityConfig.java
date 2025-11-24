@@ -79,6 +79,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints - no authentication required
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/admin/**").permitAll()
                 .requestMatchers("/api/movies/**").permitAll()
                 .requestMatchers("/api/genres").permitAll()
                 .requestMatchers("/api/profile/**").permitAll()  // Changed to permitAll - we handle auth in controllers

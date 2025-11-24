@@ -14,7 +14,7 @@ public class DatabaseConnectSingleton {
                 String username = "root";
                 String password = "Booboorex";
 
-                conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
+                conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2&autoReconnect=true&serverTimezone=UTC", username, password); //Current: jdbc:mysql://192.168.1.185:3306/CinemaEBooking?useUnicode=true&characterEncoding=utf8
 
                 if (conn != null && !conn.isClosed()) {
                     System.out.println("✅ Database connection initialized successfully!");
@@ -36,6 +36,20 @@ public class DatabaseConnectSingleton {
         }
 
         public Connection getConn() {
+            try {
+                if (conn == null || conn.isClosed()) {
+                    // Try to re-open connection
+                    System.out.println("🔁 Reopening closed DB connection");
+                    String hostURL = "127.0.0.1";
+                    String databaseName = "cinema_eBooking_system";
+                    String username = "root";
+                    String password = "Booboorex";
+                    conn = DriverManager.getConnection("jdbc:mysql://" +hostURL+ ":3306/" +databaseName+ "?enabledTLSProtocols=TLSv1.2&autoReconnect=true&serverTimezone=UTC", username, password);
+                }
+            } catch (Exception e) {
+                System.err.println("Could not re-open DB connection: " + e.getMessage());
+                e.printStackTrace();
+            }
             return conn;
         }
     }
