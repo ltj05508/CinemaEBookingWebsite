@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuthStatus } from "@/lib/authClient";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
+
 export default function NewMoviePage() {
     const router = useRouter();
     const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,7 @@ export default function NewMoviePage() {
         const payload = {
             title: String(data.title).trim(),
             description: String(data.description).trim(),
-            genres: String(data.genres).split(",").map((g: string) => g.trim()).filter(Boolean),
+            genres: String(data.genres).trim(), //.split(",").map((g: string) => g.trim()).filter(Boolean),
             durationMinutes: Number(data.durationMinutes),
             rating: String(data.rating).trim(),
             status: String(data.status),
@@ -38,14 +40,14 @@ export default function NewMoviePage() {
             releaseDate: String(data.releaseDate), // YYYY-MM-DD
         };
 
-        if (!payload.title || !payload.description || !payload.genres.length || !payload.durationMinutes || !payload.status || !payload.releaseDate) {
+        if (!payload.title || !payload.description || !payload.genres || !payload.durationMinutes || !payload.status || !payload.releaseDate) {
             setSubmitting(false);
             setErr("Please fill in all required fields.");
             return;
         }
 
         try {
-            const res = await fetch("/api/movies", {
+            const res = await fetch(`${API_BASE}/api/auth/movies`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -81,8 +83,8 @@ export default function NewMoviePage() {
 
                 <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm mb-1">Genres (comma separated) *</label>
-                        <input name="genres" required placeholder="Action, Adventure" className="w-full border rounded-xl px-3 py-2" />
+                        <label className="block text-sm mb-1">Genre *</label>
+                        <input name="genres" required placeholder="Action" className="w-full border rounded-xl px-3 py-2" />
                     </div>
                     <div>
                         <label className="block text-sm mb-1">Duration (minutes) *</label>
