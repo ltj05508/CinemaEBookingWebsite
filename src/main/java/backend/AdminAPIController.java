@@ -70,11 +70,15 @@ public class AdminAPIController {
             String genre = (String) request.get("genre");
             String rating = (String) request.get("rating");
             String description = (String) request.get("description");
-            Integer durationMinutes = (Integer) request.get("durationMinutes");
+            Integer durationMinutes = null;
+            Object durationObj = request.get("durationMinutes");
+            if (durationObj != null) {
+                durationMinutes = Integer.valueOf(durationObj.toString());
+            }
             String posterUrl = (String) request.get("posterUrl");
             String trailerUrl = (String) request.get("trailerUrl");
             Boolean currentlyShowing = (Boolean) request.get("currentlyShowing");
-            
+
             // Validate required fields
             if (title == null || title.trim().isEmpty() ||
                 genre == null || genre.trim().isEmpty() ||
@@ -85,14 +89,14 @@ public class AdminAPIController {
                 response.put("message", "Missing required fields");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             // Set defaults
             if (currentlyShowing == null) currentlyShowing = false;
-            
+
             // Call database function to insert movie
-            int movieId = MovieDBFunctions.addMovie(title, genre, rating, description, 
+            int movieId = MovieDBFunctions.addMovie(title, genre, rating, description,
                                                     durationMinutes, posterUrl, trailerUrl, currentlyShowing);
-            
+
             if (movieId > 0) {
                 response.put("success", true);
                 response.put("message", "Movie added successfully");
@@ -101,9 +105,9 @@ public class AdminAPIController {
                 response.put("success", false);
                 response.put("message", "Failed to add movie");
             }
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
@@ -160,19 +164,23 @@ public class AdminAPIController {
         
         try {
             // Extract showtime data
-            Integer movieId = (Integer) request.get("movieId");
+            Integer movieId = null;
+            Object movieIdObj = request.get("movieId");
+            if (movieIdObj != null) {
+                movieId = Integer.valueOf(movieIdObj.toString());
+            }
             String showroomId = (String) request.get("showroomId");
             String showtime = (String) request.get("showtime");
-            
+
             // Validate required fields
-            if (movieId == null || 
+            if (movieId == null ||
                 showroomId == null || showroomId.trim().isEmpty() ||
                 showtime == null || showtime.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Missing required fields (movieId, showroomId, showtime)");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             // Check for showtime conflicts (same showroom, time)
             boolean hasConflict = ShowtimeDBFunctions.checkConflict(showroomId, showtime);
             if (hasConflict) {
@@ -180,10 +188,10 @@ public class AdminAPIController {
                 response.put("message", "Showtime conflict: This showroom is already booked at this time");
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }
-            
+
             // Call database function to add showtime
             int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, showtime);
-            
+
             if (showtimeId > 0) {
                 response.put("success", true);
                 response.put("message", "Showtime added successfully");
@@ -192,9 +200,9 @@ public class AdminAPIController {
                 response.put("success", false);
                 response.put("message", "Failed to add showtime");
             }
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
