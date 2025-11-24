@@ -66,22 +66,14 @@ export default function NewShowtimePage() {
             return;
         }
 
-        // Convert local datetime to ISO string
-        const startTimeIso = new Date(startLocal).toISOString();
-
         try {
-            const conflict = await hasConflict(showroomId, startTimeIso);
-            if (conflict) {
-                setErr("Conflict: Another movie is already scheduled at that date/time in this showroom.");
-                setSubmitting(false);
-                return;
-            }
-
-            const payload = { movieId, showroomId, startTimeIso };
-            const res = await fetch("/api/admin/showtimes", {
+            // Optionally, you could add a conflict check here if needed
+            const payload = { movieId, showroomId, showtime };
+            const res = await fetch(`${API_BASE}/api/admin/showtimes`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
+                credentials: "include",
             });
             if (!res.ok) {
                 const j = await res.json().catch(() => ({}));
