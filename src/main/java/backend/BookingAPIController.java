@@ -16,13 +16,16 @@ import java.util.Map;
  *
  */
 @RestController
-@RequestMapping("/api/booking")
+//@RequestMapping("/api/booking")
 @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class BookingAPIController {
-    @Autowired
-    private EmailService emailService;
-    @Autowired
+    //@Autowired
     private BookingFunctions bookingFunctions;
+
+    @GetMapping("/api/booking/test")
+    public void testingMethod() {
+        System.out.println("\nTest called!\n");
+    }
 
 
     /**
@@ -35,6 +38,7 @@ public class BookingAPIController {
             @PathVariable String id,
             @PathVariable String showtime) {
         Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
 
         try {
             System.out.println("\nIn BookingAPIController\n");
@@ -56,16 +60,20 @@ public class BookingAPIController {
      * Returns list of already-booked seat IDs.
      * GET /api/booking/availability/{showtimeId}
      */
-    @GetMapping("/availability/{showtimeId}")
-    public ResponseEntity<Map<String, Object>> getSeatAvailability(@PathVariable int showtimeId) {
+    @GetMapping("/availability/{id}/{showtime}")
+    public ResponseEntity<Map<String, Object>> getSeatAvailability(
+            @PathVariable String id,
+            @PathVariable String showtime) {
         Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
         
         try {
-            List<String> bookedSeats = bookingFunctions.getBookedSeats(showtimeId);
+            List<String> bookedSeats = bookingFunctions.getBookedSeats(id, showtime);
             
             response.put("success", true);
             response.put("bookedSeats", bookedSeats);
-            response.put("showtimeId", showtimeId);
+            response.put("movieId", id);
+            response.put("showtime", showtime);
             
             return ResponseEntity.ok(response);
             
@@ -83,6 +91,7 @@ public class BookingAPIController {
     @GetMapping("/prices")
     public ResponseEntity<Map<String, Object>> getTicketPrices() {
         Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
         
         try {
             Map<String, Double> prices = new HashMap<>();
@@ -122,15 +131,18 @@ public class BookingAPIController {
     public ResponseEntity<Map<String, Object>> createBooking(@RequestBody Map<String, Object> request,
                                                              HttpSession session) {
         Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
         
         try {
             // Check if user is logged in
+            /*
             Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
             if (loggedIn == null || !loggedIn) {
                 response.put("success", false);
                 response.put("message", "You must be logged in to create a booking");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
+             */
             
             String userId = (String) session.getAttribute("userId");
             
@@ -157,6 +169,7 @@ public class BookingAPIController {
             }
             
             // Send confirmation email
+            /*
             try {
                 String email = (String) session.getAttribute("email");
                 String firstName = (String) session.getAttribute("firstName");
@@ -168,6 +181,7 @@ public class BookingAPIController {
                 // Log error but don't fail the booking
                 System.err.println("Failed to send confirmation email: " + e.getMessage());
             }
+             */
             
             response.put("success", true);
             response.put("message", "Booking created successfully");
@@ -190,7 +204,8 @@ public class BookingAPIController {
     public ResponseEntity<Map<String, Object>> getBooking(@PathVariable String bookingId,
                                                           HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        
+        bookingFunctions = new BookingFunctions();
+
         try {
             // Check if user is logged in
             Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");

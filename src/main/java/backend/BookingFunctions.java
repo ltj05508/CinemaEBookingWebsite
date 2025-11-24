@@ -71,12 +71,20 @@ public class BookingFunctions {
     /**
      * Get list of already-booked seat IDs for a specific showtime.
      * 
-     * @param showtimeId The showtime ID to check
+     * @param movieId The showtime ID to check
      * @return List of seat IDs that are already booked
      */
-    public List<String> getBookedSeats(int showtimeId) {
+    public List<String> getBookedSeats(String movieId, String showtime) {
         try {
-            return bookingDBFunctions.getBookedSeats(showtimeId);
+            DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("h:mm a");
+            DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+            LocalTime time = LocalTime.parse(showtime.trim(), inputFormat);
+            String militaryTime = time.format(outputFormat);
+
+            System.out.println("Converted showtime: " + showtime + " -> " + militaryTime);
+
+            return bookingDBFunctions.getBookedSeats(movieId, militaryTime);
         } catch (Exception e) {
             System.err.println("Error getting booked seats: " + e.getMessage());
             e.printStackTrace();

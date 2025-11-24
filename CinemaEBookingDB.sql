@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS Seats (
     row_label      VARCHAR(10),
     seat_number    INT,
     showroom_id    VARCHAR(50) NOT NULL,
-    FOREIGN KEY (showroom_id) REFERENCES Showrooms(showroom_id)
+    FOREIGN KEY (showroom_id) REFERENCES Showrooms(showroom_id) #replace with showtime_id?
         ON DELETE CASCADE
 );
 
@@ -107,7 +107,7 @@ CREATE TABLE Showtimes (
 );
 
 CREATE TABLE IF NOT EXISTS Bookings (
-    booking_id     VARCHAR(50) PRIMARY KEY,
+    booking_id     INT AUTO_INCREMENT PRIMARY KEY,
     booking_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status        VARCHAR(50),
     total_price    DECIMAL(10,2),
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS Bookings (
 
 CREATE TABLE IF NOT EXISTS Payments (
     payment_id     VARCHAR(50) PRIMARY KEY,
-    booking_id     VARCHAR(50) UNIQUE NOT NULL,
+    booking_id     INT UNIQUE NOT NULL,
     payment_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     amount        DECIMAL(10,2) NOT NULL,
     card_id        VARCHAR(50) NOT NULL,
@@ -133,18 +133,18 @@ CREATE TABLE IF NOT EXISTS Payments (
 
 CREATE TABLE IF NOT EXISTS Tickets (
     ticket_id      VARCHAR(50) PRIMARY KEY,
-    seat_id        VARCHAR(50) NOT NULL,
+    seat_id        VARCHAR(50) NOT NULL, #Ax2, Cx7
     showtime_id        INT NOT NULL,
-    booking_id     VARCHAR(50) NOT NULL,
+    booking_id     INT NOT NULL,
     price         DECIMAL(10,2),
     type          ENUM('adult','senior','child'),
-    FOREIGN KEY (seat_id) REFERENCES Seats(seat_id)
-        ON DELETE CASCADE,
+    #FOREIGN KEY (seat_id) REFERENCES Seats(seat_id)
+     #   ON DELETE CASCADE,
     FOREIGN KEY (showtime_id) REFERENCES Showtimes(showtime_id)
         ON DELETE CASCADE,
     FOREIGN KEY (booking_id) REFERENCES Bookings(booking_id)
-        ON DELETE CASCADE,
-    UNIQUE (seat_id, showtime_id) -- ensures logical seat per show
+        ON DELETE CASCADE
+    #UNIQUE (seat_id, showtime_id) -- ensures logical seat per show
 );
 
 -- Insert movies with proper currently_showing values
@@ -164,9 +164,9 @@ VALUES
 
 INSERT INTO Showrooms (showroom_id, name, seat_count, num_of_rows, num_of_cols, theatre_id)
 VALUES
-('1', 'Showroom1', 96, 12, 8, 1),
-('2', 'Showroom2', 98, 14, 7, 1),
-('3', 'RoyalShowroom', 120, 15, 8, 2);
+('1', 'Showroom1', 96, 8, 12, 1),
+('2', 'Showroom2', 100, 10, 10, 1),
+('3', 'RoyalShowroom', 132, 12, 11, 2);
 
 -- Insert showtimes (only once per movie-time combination)
 INSERT INTO Showtimes (movie_id, showroom_id, showtime) VALUES
@@ -204,3 +204,11 @@ VALUES
 INSERT INTO Promotions(promo_id, code, description, discount_percent, valid_from, valid_to)
 VALUES
 ('1', 'promo1234', 'Test promotion for 15% off!', 15.00, '2025-10-01', '2025-12-25');
+
+INSERT INTO Bookings(booking_id, booking_date, status, total_price, customer_id, promo_id)
+VALUES
+('1', CURRENT_TIMESTAMP, 'active', 12, 1, '1');
+
+INSERT INTO Tickets(ticket_id, seat_id, showtime_id, booking_id, price, type)
+VALUES
+('1', 'Ax5', 4, 1, 10, 'adult');

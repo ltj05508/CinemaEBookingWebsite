@@ -72,26 +72,27 @@ public class BookingDBFunctions {
     /**
      * Get list of seat IDs that are already booked for a specific showtime.
      * 
-     * @param showtimeId The showtime ID
+     * @param movieId The showtime ID
      * @return List of booked seat IDs
      */
-    public List<String> getBookedSeats(int showtimeId) {
+    public List<String> getBookedSeats(String movieId, String showtime) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<String> bookedSeats = new ArrayList<>();
 
         try {
-            String sql = "SELECT seat_id FROM Tickets WHERE showtime_id = ?";
+            String sql = "SELECT seat_id FROM Tickets AS t INNER JOIN Showtimes AS sh ON t.showtime_id = sh.showtime_id WHERE sh.movie_id = ? AND sh.showtime = CAST(? AS TIME)";
             pstmt = dcs.getConn().prepareStatement(sql);
-            pstmt.setInt(1, showtimeId);
+            pstmt.setString(1, movieId);
+            pstmt.setString(2, showtime);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 bookedSeats.add(rs.getString("seat_id"));
             }
 
-            System.out.println("Found " + bookedSeats.size() + " booked seats for showtime " + showtimeId);
+            System.out.println("Found " + bookedSeats.size() + " booked seats for showing of Movie #" +movieId+ " at " +showtime+ ".");
             return bookedSeats;
 
         } catch (SQLException e) {

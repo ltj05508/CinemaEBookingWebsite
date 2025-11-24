@@ -2,6 +2,7 @@ package backend;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.awt.print.Book;
 import java.sql.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -35,9 +36,17 @@ public class ConnectToDatabase {
         System.out.println(test);
          */
 
+        /*
         BookingFunctions bf = new BookingFunctions();
         Showroom test = bf.getSeatsForShow("3", "03:00 PM");
         System.out.println(test);
+         */
+
+        BookingFunctions bf = new BookingFunctions();
+        List<String> bookedSeats = bf.getBookedSeats("2", "1:30 PM");
+        for (int i = 0; i < bookedSeats.size(); i++) {
+            System.out.println(bookedSeats.get(i));
+        }
 
 
         /*

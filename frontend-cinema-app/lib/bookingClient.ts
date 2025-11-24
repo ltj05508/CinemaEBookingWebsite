@@ -16,7 +16,7 @@ export async function getSeats(
 ): Promise<Showroom | null> {
   try {
     const res = await fetch(
-      `${API_BASE}/api/booking/seats/${id}/${showtimeParam}`,
+      `${API_BASE}/api/auth/seats/${id}/${showtimeParam}`, ///api
       {
         method: "GET",
         credentials: "include",
@@ -26,10 +26,29 @@ export async function getSeats(
 
     const data = await res.json();
 
-    if (!res.ok || !data.success || !data.showroom) {
-      console.error("Backend error in getSeats:", data);
+    /*
+    if (!res.ok || !data.success || !Array.isArray(data.bookedSeats)) {
+      console.error("Backend error in getSeatAvailability:", data);
+      return new Set();
+    }
+      */
+
+    if (!res.ok) {
+      console.error("Backend error1 in getSeats:", data);
       return null;
     }
+
+    if (!data.success) {
+      console.error("Backend error2 in getSeats:", data);
+      return null;
+    }
+
+    /*
+    if (!Array.isArray(data.bookedSeats)) {
+      console.error("Backend error3 in getSeats:", data);
+      return null;
+    }
+      */
 
     const s = data.showroom;
 
@@ -51,11 +70,12 @@ export async function getSeats(
 export type SeatId = string;
 
 export async function getSeatAvailability(
-  showtimeId: number
+  movieId: string, 
+  showtimeParam: string
 ): Promise<Set<SeatId>> {
   try {
     const res = await fetch(
-      `${API_BASE}/api/booking/availability/${showtimeId}`,
+      `${API_BASE}/api/auth/availability/${movieId}/${showtimeParam}`, ///api
       {
         method: "GET",
         credentials: "include",
@@ -65,8 +85,25 @@ export async function getSeatAvailability(
 
     const data = await res.json();
 
+    /*
     if (!res.ok || !data.success || !Array.isArray(data.bookedSeats)) {
       console.error("Backend error in getSeatAvailability:", data);
+      return new Set();
+    }
+      */
+
+    if (!res.ok) {
+      console.error("Backend error1 in getSeatAvailability:", data);
+      return new Set();
+    }
+
+    if (!data.success) {
+      console.error("Backend error2 in getSeatAvailability:", data);
+      return new Set();
+    }
+
+    if (!Array.isArray(data.bookedSeats)) {
+      console.error("Backend error3 in getSeatAvailability:", data);
       return new Set();
     }
 

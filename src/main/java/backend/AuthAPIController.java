@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +26,8 @@ public class AuthAPIController {
     
     @Autowired
     private UserFunctions userFunctions;
+    @Autowired
+    private BookingFunctions bookingFunctions;
 
     @GetMapping("/getUserInfo/{email}")
     public ResponseEntity<String> getUserInfo(@PathVariable String email) {
@@ -546,6 +549,89 @@ public class AuthAPIController {
             response.put("success", true);
             response.put("cards", out);
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get ticket pricing information.
+     * GET /api/booking/prices
+     */
+    @GetMapping("/prices")
+    public ResponseEntity<Map<String, Object>> getTicketPrices() {
+        Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
+
+        try {
+            Map<String, Double> prices = new HashMap<>();
+            prices.put("adult", 12.00);
+            prices.put("senior", 10.00);
+            prices.put("child", 8.00);
+
+            response.put("success", true);
+            response.put("prices", prices);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Returns the seats (available/unavailable) for a selected showtime.
+     * GET /api/auth/seats/{id}/{showtime}
+     * Path variables: id (movie ID), showtime (formatted time like "2:00 PM")
+     */
+    @GetMapping("/seats/{id}/{showtime}")
+    public ResponseEntity<Map<String, Object>> getSeats(
+            @PathVariable String id,
+            @PathVariable String showtime) {
+        Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
+
+        try {
+            System.out.println("\nIn BookingAPIController\n");
+            Showroom showroom = bookingFunctions.getSeatsForShow(id, showtime);
+            response.put("success", true);
+            response.put("showroom", showroom);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get seat availability for a specific showtime.
+     * Returns list of already-booked seat IDs.
+     * GET /api/auth/availability/{id}/{showtime}
+     */
+    @GetMapping("/availability/{id}/{showtime}")
+    public ResponseEntity<Map<String, Object>> getSeatAvailability(
+            @PathVariable String id,
+            @PathVariable String showtime) {
+        Map<String, Object> response = new HashMap<>();
+        bookingFunctions = new BookingFunctions();
+
+        try {
+            List<String> bookedSeats = bookingFunctions.getBookedSeats(id, showtime);
+
+            response.put("success", true);
+            response.put("bookedSeats", bookedSeats);
+            response.put("movieId", id);
+            response.put("showtime", showtime);
+
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());

@@ -335,12 +335,14 @@ export default function BookingPage({ params }: PageProps) {
   const { id, showtime: rawShowtime } = params;
   const showtime = decodeURIComponent(rawShowtime);
 
+  /*
   const searchParams = useSearchParams();
   const showtimeIdParam = searchParams.get("showtimeId");
   const parsedShowtimeId = showtimeIdParam
     ? parseInt(showtimeIdParam, 10)
     : NaN;
   const showtimeId = Number.isNaN(parsedShowtimeId) ? null : parsedShowtimeId;
+  */
 
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loadingMovie, setLoadingMovie] = useState(true);
@@ -360,18 +362,24 @@ export default function BookingPage({ params }: PageProps) {
   const COLS = showroom?.numOfCols ?? 0;
   const PRICE_PER_SEAT = 12.0;
   const reservedSeats = bookedSeats;
+  //const regex = /[ABCDEFGHIJKLMNOPQRSTUVWXYZ]x\d+/g;
+  
+
+
+
+
 
   useEffect(() => {
     async function fetchSeatsData() {
       try {
-        const room = await getSeats(id, rawShowtime);
+        const room = await getSeats(id, showtime);
         setShowroom(room);
       } finally {
         setLoadingShowroom(false);
       }
     }
     fetchSeatsData();
-  }, [id, rawShowtime]);
+  }, [id, showtime]);
 
   useEffect(() => {
     async function fetchMovie() {
@@ -387,20 +395,22 @@ export default function BookingPage({ params }: PageProps) {
 
   useEffect(() => {
     async function fetchAvailability() {
+      /*
       if (!showtimeId) {
         setBookedSeats(new Set());
         setLoadingAvailability(false);
         return;
       }
+        */
       try {
-        const booked = await getSeatAvailability(showtimeId);
+        const booked = await getSeatAvailability(id, showtime);
         setBookedSeats(booked);
       } finally {
         setLoadingAvailability(false);
       }
     }
     fetchAvailability();
-  }, [showtimeId]);
+  }, [id, showtime]);
 
   if (loadingMovie || loadingShowroom || loadingAvailability) {
     return <div className="p-8">Loading...</div>;
@@ -417,6 +427,7 @@ export default function BookingPage({ params }: PageProps) {
         <h1 className="mt-4 text-xl font-semibold">
           Seat map unavailable for this showtime.
         </h1>
+        <h1 className="text-2xl font-semibold">{params.showtime}</h1>
         <p className="mt-2 text-sm opacity-70">
           We couldn&apos;t load a showroom for {movie.title} at {showtime}.
         </p>
@@ -427,8 +438,12 @@ export default function BookingPage({ params }: PageProps) {
   const toggleSeat = (seat: SeatId) => {
     if (reservedSeats.has(seat)) return;
     const next = new Set(selected);
-    if (next.has(seat)) next.delete(seat);
-    else next.add(seat);
+    if (next.has(seat)) {
+      next.delete(seat);
+    } else {
+      //alert(`Proceeding with seats`);
+      next.add(seat);
+    }
     setSelected(next);
   };
 
@@ -454,7 +469,7 @@ export default function BookingPage({ params }: PageProps) {
 
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">Select your seats</h1>
-          <h1 className="text-2xl font-semibold">{id}</h1>
+          <h1 className="text-2xl font-semibold">{reservedSeats}</h1>
           <p className="opacity-70">
             {movie.title} • {showtime}
           </p>
@@ -568,8 +583,8 @@ function Row({
     <>
       <div className="text-xs pr-2 flex items-center opacity-70">{row}</div>
       {Array.from({ length: cols }, (_, i) => {
-        const seatId: SeatId = `${row}${i + 1}`;
-        const isReserved = reserved.has(seatId);
+        const seatId: SeatId = `${row}x${i + 1}`;
+        const isReserved = reserved.has(seatId); //seatId
         const isSelected = selected.has(seatId);
         return (
           <button
