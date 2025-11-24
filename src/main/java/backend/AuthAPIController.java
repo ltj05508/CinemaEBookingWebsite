@@ -664,6 +664,72 @@ public class AuthAPIController {
     }
 
     /**
+     * Create a promotion.
+     * POST /api/admin/promotions
+     * Body: { "code": "SAVE20", "description": "Save 20%!", "discountPercent": 20.0,
+     *         "validFrom": "2025-11-01", "validTo": "2025-12-31" }
+     */
+    @PostMapping("/promotions")
+    public ResponseEntity<Map<String, Object>> createPromotion(@RequestBody Map<String, Object> request,
+                                                               HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check admin auth
+        /*
+        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
+        if (authCheck != null) return authCheck;
+
+         */
+
+        try {
+            // Extract promotion data
+            String code = (String) request.get("promoCode");
+            String description = (String) request.get("description");
+            Object discountObj = request.get("discountPercent");
+            String validFrom = (String) request.get("startDate");
+            String validTo = (String) request.get("endDate");
+
+            // Convert discount to double
+            double discountPercent = 0.0;
+            if (discountObj instanceof Integer) {
+                discountPercent = ((Integer) discountObj).doubleValue();
+            } else if (discountObj instanceof Double) {
+                discountPercent = (Double) discountObj;
+            }
+
+            // Validate required fields
+            if (code == null || code.trim().isEmpty() ||
+                    description == null || description.trim().isEmpty() ||
+                    discountPercent < 1 || discountPercent > 100 ||
+                    validFrom == null || validFrom.trim().isEmpty() ||
+                    validTo == null || validTo.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Invalid or missing required fields (code, description, discount %, validFrom, validTo)");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Call database function to create promotion
+            String promoId = PromotionDBFunctions.createPromotion(code, description, discountPercent, validFrom, validTo);
+
+            if (promoId != null) {
+                response.put("success", true);
+                response.put("message", "Promotion created successfully");
+                response.put("promoId", promoId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to create promotion");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Add a new movie.
      * POST /api/admin/movies
      * Body: { "title": "Movie Title", "genre": "Action", "rating": "PG-13",
