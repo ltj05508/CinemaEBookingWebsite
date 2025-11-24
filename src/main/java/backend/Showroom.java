@@ -9,6 +9,7 @@ public class Showroom{
     private int numOfRows;
     private int numOfCols;
     private String theatreId;
+    private int showtimeId;  // Added for frontend to use in booking
     private int[][] showroomMap;
 
 
@@ -48,6 +49,7 @@ public class Showroom{
     public int getNumOfRows() {return numOfRows;}
     public int getNumOfCols() {return numOfCols;}
     public String getTheatreId() {return theatreId;}
+    public int getShowtimeId() {return showtimeId;}
     public int[][] getShowroomMap() {return showroomMap;};
 
     public void setShowroomId(int showroomId) {this.showroomId = showroomId;}
@@ -56,6 +58,7 @@ public class Showroom{
     public void setNumOfRows(int numOfRows) {this.numOfRows = numOfRows;}
     public void setNumOfCols(int numOfCols) {this.numOfCols = numOfCols;}
     public void setTheatreId(String theatreId) {this.theatreId = theatreId;}
+    public void setShowtimeId(int showtimeId) {this.showtimeId = showtimeId;}
     public void setShowroomMap(int[][] showroomMap) {this.showroomMap = showroomMap;}
 
     @Override

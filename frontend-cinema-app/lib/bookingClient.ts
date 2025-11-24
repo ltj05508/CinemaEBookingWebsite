@@ -5,6 +5,7 @@ export interface Showroom {
   numOfRows: number;
   numOfCols: number;
   theatreId: string;
+  showtimeId: number;  // Added to support availability checking and booking
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
@@ -39,6 +40,7 @@ export async function getSeats(
       numOfRows: Number(s.numOfRows),
       numOfCols: Number(s.numOfCols),
       theatreId: String(s.theatreId),
+      showtimeId: Number(s.showtimeId),
     };
   } catch (err) {
     console.error("Error fetching seats:", err);

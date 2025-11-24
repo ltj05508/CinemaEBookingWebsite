@@ -17,28 +17,13 @@ public class BookingDBFunctions {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        Map<String, Object> showtimes = null;
         String showroomId = null;
-        int seatCount = -1;
+        int showtimeId = -1;
         Showroom activeShowroom = null;
 
         try {
-            //String sql = "SELECT * FROM Seats AS s INNER JOIN Showrooms AS sh ON s.showroom_id = sh.showroom_id INNER JOIN Showtimes as showt ON sh.showroom_id = showt.showroom_id WHERE showt.showtime = STR_TO_DATE(?, '%H:%i') AND showt.movie_id = ?";
-            //String sql = "SELECT * FROM Showtimes WHERE movie_id = ?";
-
-            //For the love of god come up with a better method
-            /*
-            String[] split = showtime.split(":");
-            int temp = Integer.parseInt(split[0]);
-            if (temp < 8) {
-                temp += 12;
-                showtime = temp + ":" + split[1];
-            }
-            */
-
-
-            String sql = "SELECT showroom_id FROM Showtimes WHERE movie_id = ? AND showtime = CAST(? AS TIME)";
-
+            // Get both showroom_id and showtime_id
+            String sql = "SELECT showroom_id, showtime_id FROM Showtimes WHERE movie_id = ? AND showtime = CAST(? AS TIME)";
 
             pstmt = dcs.getConn().prepareStatement(sql);
             pstmt.setString(1, movieId);
@@ -48,6 +33,7 @@ public class BookingDBFunctions {
 
             if (rs.next()) {
                 showroomId = rs.getString("showroom_id");
+                showtimeId = rs.getInt("showtime_id");
             }
 
             sql = "SELECT * FROM Showrooms WHERE showroom_id = ?";
@@ -64,6 +50,7 @@ public class BookingDBFunctions {
                 activeShowroom.setNumOfRows(rs.getInt("num_of_rows"));
                 activeShowroom.setNumOfCols(rs.getInt("num_of_cols"));
                 activeShowroom.setTheatreId(rs.getString("theatre_id"));
+                activeShowroom.setShowtimeId(showtimeId);  // Set the showtimeId
             }
 
             return activeShowroom;
