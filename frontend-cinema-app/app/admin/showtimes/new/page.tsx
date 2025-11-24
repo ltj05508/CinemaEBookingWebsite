@@ -7,6 +7,8 @@ import { getMovies } from "@/lib/data";
 
 type MovieLite = { id: string; title: string };
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "";
+
 export default function NewShowtimePage() {
     const router = useRouter();
     const [movies, setMovies] = useState<MovieLite[]>([]);
@@ -43,7 +45,7 @@ export default function NewShowtimePage() {
 
     async function hasConflict(showroomId: string, startIso: string) {
         const dateOnly = startIso.slice(0, 10);
-        const res = await fetch(`/api/showtimes?showroomId=${encodeURIComponent(showroomId)}&date=${encodeURIComponent(dateOnly)}`);
+        const res = await fetch(`${API_BASE}/api/showtimes?showroomId=${encodeURIComponent(showroomId)}&date=${encodeURIComponent(dateOnly)}`);
         if (!res.ok) return false;
         const list = await res.json();
         return list.some((s: any) => String(s.showroomId) === showroomId && String(s.startTimeIso) === startIso);
@@ -64,9 +66,18 @@ export default function NewShowtimePage() {
             return;
         }
 
+        // Convert local datetime to ISO string
+        const startTimeIso = new Date(startLocal).toISOString();
+
         try {
-            // Optionally, you could add a conflict check here if needed
-            const payload = { movieId, showroomId, showtime };
+            const conflict = await hasConflict(showroomId, startTimeIso);
+            if (conflict) {
+                setErr("Conflict: Another movie is already scheduled at that date/time in this showroom.");
+                setSubmitting(false);
+                return;
+            }
+
+            const payload = { movieId, showroomId, startTimeIso };
             const res = await fetch("/api/admin/showtimes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
