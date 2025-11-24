@@ -23,7 +23,8 @@ import java.util.Map;
 public class AuthAPIController {
     
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    
+    @Autowired
+    private EmailService emailService;
     @Autowired
     private UserFunctions userFunctions;
     @Autowired
@@ -719,6 +720,68 @@ public class AuthAPIController {
                 response.put("success", false);
                 response.put("message", "Failed to create promotion");
             }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Send promotion email to subscribed users.
+     * POST /api/admin/promotions/email
+     * Body: { "subject": "Special Offer!", "message": "Save 20%..." }
+     */
+    @PostMapping("/promotions/email")
+    public ResponseEntity<Map<String, Object>> sendPromotionEmail(@RequestBody Map<String, Object> request,
+                                                                  HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check admin auth
+        /*
+        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
+        if (authCheck != null) return authCheck;
+         */
+
+        try {
+            // Extract email data
+            String subject = (String) request.get("subject");
+            String message = (String) request.get("message");
+
+            // Validate required fields
+            if (subject == null || subject.trim().isEmpty() ||
+                    message == null || message.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Missing required fields (subject, message)");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Get all users who opted in for marketing
+            List<Map<String, String>> subscribedUsers = UserDBFunctions.getSubscribedUsers();
+
+            // Send email to each subscribed user
+            int sentCount = 0;
+            for (Map<String, String> user : subscribedUsers) {
+                try {
+                    emailService.sendPromotionEmail(
+                            user.get("email"),
+                            user.get("firstName"),
+                            subject,
+                            message
+                    );
+                    sentCount++;
+                } catch (Exception e) {
+                    System.err.println("Failed to send email to " + user.get("email") + ": " + e.getMessage());
+                }
+            }
+
+            response.put("success", true);
+            response.put("message", "Promotion emails sent successfully");
+            response.put("recipientCount", sentCount);
+            response.put("totalSubscribers", subscribedUsers.size());
 
             return ResponseEntity.ok(response);
 
