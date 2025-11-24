@@ -18,6 +18,7 @@ public class ShowtimeFunctionalTests {
     private final java.util.List<Integer> createdMovieIds = new java.util.ArrayList<>();
     private final java.util.List<Integer> createdShowtimeIds = new java.util.ArrayList<>();
     private final java.util.List<String> createdBookingIds = new java.util.ArrayList<>();
+    private final java.util.List<String> createdUserIds = new java.util.ArrayList<>();
 
     @Test
     public void testSchedulingConflictWithDBFunctions() {
@@ -162,6 +163,88 @@ public class ShowtimeFunctionalTests {
         Assertions.assertTrue(storedTickets.stream().anyMatch(t -> "C3".equals(t.get("seatId"))), "Ticket for C3 not found in stored booking");
     }
 
+    @Test
+    public void testAdminAddShowtimeRejectsConflict() {
+        // Create a test movie via DB functions
+        int movieId = MovieDBFunctions.addMovie("Test Movie Conflict Admin", "Test", "PG", "Desc", 90, "", "", false);
+        Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+        createdMovieIds.add(movieId);
+
+        // Find a showroom ID
+        List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+        Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
+        String showroomId = (String) showrooms.get(0).get("showroomId");
+
+        // Create admin user (hashed password) and set active + admin
+        org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        String adminEmail = "test-admin-" + System.currentTimeMillis() + "@example.com";
+        String adminPassword = "AdminPass123!";
+        String hashed = encoder.encode(adminPassword);
+        String adminId = UserDBFunctions.createUser("Test", "Admin", adminEmail, hashed, false);
+        Assertions.assertNotNull(adminId, "Failed to create admin user");
+        createdUserIds.add(adminId);
+
+        // Activate admin user
+        boolean activated = UserDBFunctions.activateCustomer(adminEmail);
+        Assertions.assertTrue(activated, "Failed to activate admin user");
+
+        // Add admin role
+        try (java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement("INSERT IGNORE INTO Admins (admin_id) VALUES (?)")) {
+            pstmt.setString(1, adminId);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assertions.fail("Failed to add admin role");
+        }
+
+        // Login as admin via REST to obtain session cookie
+        Map<String, String> loginReq = new java.util.HashMap<>();
+        loginReq.put("email", adminEmail);
+        loginReq.put("password", adminPassword);
+
+        org.springframework.http.ResponseEntity<java.util.Map> loginResp = restTemplate.postForEntity("/api/auth/login", loginReq, java.util.Map.class);
+        Assertions.assertEquals(org.springframework.http.HttpStatus.OK, loginResp.getStatusCode(), "Admin login failed");
+        String setCookie = loginResp.getHeaders().getFirst("Set-Cookie");
+        Assertions.assertNotNull(setCookie, "No Set-Cookie header returned from login");
+        String cookie = setCookie.split(";")[0]; // JSESSIONID=...
+
+        // Add initial showtime via Admin API
+        Map<String, Object> showtimeReq = new java.util.HashMap<>();
+        showtimeReq.put("movieId", movieId);
+        showtimeReq.put("showroomId", showroomId);
+        showtimeReq.put("showtime", "19:00:00");
+
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.add("Cookie", cookie);
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        org.springframework.http.HttpEntity<Map<String, Object>> entity = new org.springframework.http.HttpEntity<>(showtimeReq, headers);
+
+        org.springframework.http.ResponseEntity<java.util.Map> addResp = restTemplate.exchange("/api/admin/showtimes", org.springframework.http.HttpMethod.POST, entity, java.util.Map.class);
+        Assertions.assertEquals(org.springframework.http.HttpStatus.OK, addResp.getStatusCode(), "Failed to add initial showtime");
+        // Extract showtimeId created and track it
+        java.util.Map body = addResp.getBody();
+        if (body != null && body.get("showtimeId") != null) {
+            createdShowtimeIds.add(((Number) body.get("showtimeId")).intValue());
+        }
+
+        // Now attempt to add conflicting showtime via Admin API - same showroom/time
+        org.springframework.http.ResponseEntity<java.util.Map> conflictResp = restTemplate.exchange("/api/admin/showtimes", org.springframework.http.HttpMethod.POST, entity, java.util.Map.class);
+        Assertions.assertEquals(org.springframework.http.HttpStatus.CONFLICT, conflictResp.getStatusCode(), "Expected 409 Conflict when adding a conflicting showtime");
+
+        // Verify via Admin GET showtimes that only the original showtime is present
+        org.springframework.http.HttpEntity<Void> getEntity = new org.springframework.http.HttpEntity<>(headers);
+        org.springframework.http.ResponseEntity<java.util.Map> getResp = restTemplate.exchange("/api/admin/showtimes/" + movieId, org.springframework.http.HttpMethod.GET, getEntity, java.util.Map.class);
+        Assertions.assertEquals(org.springframework.http.HttpStatus.OK, getResp.getStatusCode(), "Failed to fetch showtimes via admin API");
+        java.util.Map getBody = getResp.getBody();
+        Assertions.assertNotNull(getBody);
+        java.util.List javaList = (java.util.List) getBody.get("showtimes");
+        Assertions.assertNotNull(javaList);
+        // Expect no duplicate showtime entries at 19:00:00
+        long count = javaList.stream().filter(i -> java.util.Objects.equals(((java.util.Map) i).get("showtime"), "19:00:00")).count();
+        Assertions.assertEquals(1, count, "Expected only one showtime at 19:00:00");
+    }
+
     @AfterEach
     public void tearDown() {
         // Allow skipping cleanup for debugging by setting SKIP_TEST_CLEANUP to '1'
@@ -202,6 +285,24 @@ public class ShowtimeFunctionalTests {
                 pstmt.executeUpdate();
                 pstmt.close();
             }
+
+            // Delete created admin/users
+            for (String userId : createdUserIds) {
+                pstmt = conn.prepareStatement("DELETE FROM Admins WHERE admin_id = ?");
+                pstmt.setString(1, userId);
+                pstmt.executeUpdate();
+                pstmt.close();
+
+                pstmt = conn.prepareStatement("DELETE FROM Customers WHERE customer_id = ?");
+                pstmt.setString(1, userId);
+                pstmt.executeUpdate();
+                pstmt.close();
+
+                pstmt = conn.prepareStatement("DELETE FROM Users WHERE user_id = ?");
+                pstmt.setString(1, userId);
+                pstmt.executeUpdate();
+                pstmt.close();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -211,6 +312,7 @@ public class ShowtimeFunctionalTests {
             createdBookingIds.clear();
             createdShowtimeIds.clear();
             createdMovieIds.clear();
+            createdUserIds.clear();
         }
     }
 }
