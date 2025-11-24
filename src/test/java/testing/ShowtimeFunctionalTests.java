@@ -1,16 +1,28 @@
-package backend;
+package testing;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.boot.test.context.SpringBootTest;
+//import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.Map;
+import backend.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        classes = backend.CinemaEBookSpringBoot.class
+)
 public class ShowtimeFunctionalTests {
+    @TestConfiguration
+    static class TestConfig {
+        // Empty on purpose.
+        // Add @Bean definitions here only if a class needs to be Spring-managed.
+    }
+
     @Autowired
     private TestRestTemplate restTemplate; // kept if we want to extend tests to use REST later
 
