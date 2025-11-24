@@ -176,6 +176,13 @@ public class ShowtimeFunctionalTests {
 
     @AfterEach
     public void tearDown() {
+        // Allow skipping cleanup for debugging by setting SKIP_TEST_CLEANUP to '1'
+        String skipCleanup = System.getenv("SKIP_TEST_CLEANUP");
+        if (skipCleanup != null && (skipCleanup.equals("1") || skipCleanup.equalsIgnoreCase("true"))) {
+            System.out.println("SKIP_TEST_CLEANUP set: not cleaning test data (use cleanup-test-data scripts to clean later)");
+            return;
+        }
+
         java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
         java.sql.PreparedStatement pstmt = null;
         try {
