@@ -12,8 +12,9 @@ import { getSeats } from "@/lib/bookingClient";
 import type { Showroom } from "@/lib/bookingClient";
 
 /*
+
 type PageProps = {
-  params: { id: string; showtime: string };
+  params: Promise<{ id: string; showtime: string }>;
 };
 */
 /*
@@ -314,7 +315,7 @@ function LegendSwatch({ className, label }: { className?: string; label: string 
 */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getMovieById } from "@/lib/data";
@@ -328,11 +329,11 @@ import {
 import type { Showroom } from "@/lib/bookingClient";
 
 type PageProps = {
-  params: { id: string; showtime: string };
+  params?: Promise<{ id: string; showtime: string }>;
 };
 
 export default function BookingPage({ params }: PageProps) {
-  const { id, showtime: rawShowtime } = params;
+  const { id, showtime: rawShowtime } = use((params ?? Promise.resolve({ id: "", showtime: "" })) as Promise<{ id: string; showtime: string }>) as { id: string; showtime: string };
   const showtime = decodeURIComponent(rawShowtime);
 
   /*
@@ -427,7 +428,7 @@ export default function BookingPage({ params }: PageProps) {
         <h1 className="mt-4 text-xl font-semibold">
           Seat map unavailable for this showtime.
         </h1>
-        <h1 className="text-2xl font-semibold">{params.showtime}</h1>
+        <h1 className="text-2xl font-semibold">{showtime}</h1>
         <p className="mt-2 text-sm opacity-70">
           We couldn&apos;t load a showroom for {movie.title} at {showtime}.
         </p>

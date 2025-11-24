@@ -39,7 +39,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3002"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -80,6 +80,7 @@ public class SecurityConfig {
                 // Public endpoints - no authentication required
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/movies/**").permitAll()
+                .requestMatchers("/api/genres").permitAll()
                 .requestMatchers("/api/profile/**").permitAll()  // Changed to permitAll - we handle auth in controllers
                 .requestMatchers("/error").permitAll()
                 

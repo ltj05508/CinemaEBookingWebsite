@@ -1,56 +1,148 @@
-package java;
+package backend;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import java.util.HashMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import java.util.Map;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ShowtimeFunctionalTests {
     @Autowired
-    private TestRestTemplate restTemplate;
+    private TestRestTemplate restTemplate; // kept if we want to extend tests to use REST later
 
     @Test
-    public void testSchedulingConflict() {
-        // Arrange: Create a showtime in a showroom at a specific time
-        Map<String, Object> showtime1 = new HashMap<>();
-        showtime1.put("showroomId", 1);
-        showtime1.put("movieId", 1);
-        showtime1.put("startTime", "2025-11-23T18:00:00");
-        showtime1.put("endTime", "2025-11-23T20:00:00");
-        ResponseEntity<String> response1 = restTemplate.postForEntity("/api/showtimes", showtime1, String.class);
-        Assertions.assertEquals(HttpStatus.OK, response1.getStatusCode());
+    public void testSchedulingConflictWithDBFunctions() {
+        // Create a test movie
+        int movieId = MovieDBFunctions.addMovie("Test Movie Conflict", "Test", "PG", "Desc", 90, "", "", false);
+        Assertions.assertTrue(movieId > 0, "Failed to create test movie");
 
-        // Act: Try to create a conflicting showtime in the same showroom
-        Map<String, Object> showtime2 = new HashMap<>();
-        showtime2.put("showroomId", 1);
-        showtime2.put("movieId", 2);
-        showtime2.put("startTime", "2025-11-23T19:00:00"); // Overlaps with previous
-        showtime2.put("endTime", "2025-11-23T21:00:00");
-        ResponseEntity<String> response2 = restTemplate.postForEntity("/api/showtimes", showtime2, String.class);
-        // Assert: Should fail due to conflict
-        Assertions.assertTrue(response2.getStatusCode().is4xxClientError() || response2.getStatusCode().is5xxServerError());
+        // Find a showroom ID
+        List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+        Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
+        String showroomId = (String) showrooms.get(0).get("showroomId");
+
+        // Add initial showtime
+        int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "19:00:00");
+        Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+
+        // Check conflict for same showroom/time
+        boolean conflict = ShowtimeDBFunctions.checkConflict(showroomId, "19:00:00");
+        Assertions.assertTrue(conflict, "Expected a scheduling conflict but none found");
     }
 
     @Test
-    public void testShowtimeVisibility() {
-        // Arrange: Create a showtime in the future
-        Map<String, Object> showtime = new HashMap<>();
-        showtime.put("showroomId", 2);
-        showtime.put("movieId", 3);
-        showtime.put("startTime", "2025-12-01T18:00:00");
-        showtime.put("endTime", "2025-12-01T20:00:00");
-        restTemplate.postForEntity("/api/showtimes", showtime, String.class);
+    public void testShowtimeVisibilityWithDBFunctions() {
+        // Create a test movie
+        int movieId = MovieDBFunctions.addMovie("Test Movie Visibility", "Test", "PG", "Desc", 90, "", "", false);
+        Assertions.assertTrue(movieId > 0, "Failed to create test movie");
 
-        // Act: Get visible showtimes
-        ResponseEntity<String> response = restTemplate.getForEntity("/api/showtimes/visible", String.class);
-        // Assert: The created showtime should be present in the response
-        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
-        Assertions.assertTrue(response.getBody().contains("2025-12-01T18:00:00"));
+        // Use an existing showroom
+        List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+        Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
+        String showroomId = (String) showrooms.get(0).get("showroomId");
+
+        // Add a new showtime for visibility
+        int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "20:30:00");
+        Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+
+        // Get showtimes by movie
+        List<Map<String, Object>> showtimes = ShowtimeDBFunctions.getShowtimesByMovie(movieId);
+        Assertions.assertFalse(showtimes.isEmpty(), "No showtimes returned for the test movie");
+
+        boolean found = showtimes.stream().anyMatch(s -> "20:30:00".equals(s.get("showtime")));
+        Assertions.assertTrue(found, "Created showtime not visible in getShowtimesByMovie");
+    }
+
+    @Test
+    public void testSeatAvailability() {
+        // Create a test movie and showtime
+        int movieId = MovieDBFunctions.addMovie("Test Movie Booking", "Test", "PG", "Desc", 90, "", "", false);
+        Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+
+        List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+        Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
+        String showroomId = (String) showrooms.get(0).get("showroomId");
+
+        int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "18:45:00");
+        Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+
+        // Ensure seat exists in the Seats table to satisfy FK constraint before booking
+        java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement("INSERT IGNORE INTO Seats (seat_id, row_label, seat_number, showroom_id) VALUES (?, ?, ?, ?)")) {
+            pstmt.setString(1, "A1");
+            pstmt.setString(2, "A");
+            pstmt.setInt(3, 1);
+            pstmt.setString(4, showroomId);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Book a seat using BookingDBFunctions directly (customer id '1' exists in seed DB)
+        BookingDBFunctions bookingDB = new BookingDBFunctions();
+        List<Map<String, String>> tickets = List.of(Map.of("seatId", "A1", "type", "adult"));
+
+        String bookingId = bookingDB.createBooking("1", showtimeId, 12.00, null, tickets);
+        Assertions.assertNotNull(bookingId, "Booking creation failed");
+
+        // Check seat availability via BookingFunctions.getBookedSeats (converts PM -> 24hr)
+        BookingFunctions bf2 = new BookingFunctions();
+        List<String> booked = bf2.getBookedSeats(Integer.toString(movieId), "6:45 PM");
+        Assertions.assertTrue(booked.contains("A1"), "Seat A1 should be booked but is not listed as booked");
+
+        // Ensure B2 exists in Seats table
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement("INSERT IGNORE INTO Seats (seat_id, row_label, seat_number, showroom_id) VALUES (?, ?, ?, ?)")) {
+            pstmt.setString(1, "B2");
+            pstmt.setString(2, "B");
+            pstmt.setInt(3, 2);
+            pstmt.setString(4, showroomId);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Test
+    public void testBookingFlow() {
+        // Create a test movie and showtime
+        int movieId = MovieDBFunctions.addMovie("Test Movie Booking Flow", "Test", "PG", "Desc", 90, "", "", false);
+        Assertions.assertTrue(movieId > 0, "Failed to create test movie");
+
+        List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+        Assertions.assertFalse(showrooms.isEmpty(), "No showrooms found in DB");
+        String showroomId = (String) showrooms.get(0).get("showroomId");
+
+        int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, "21:00:00");
+        Assertions.assertTrue(showtimeId > 0, "Failed to add showtime");
+
+        // Ensure seats exist
+        java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement("INSERT IGNORE INTO Seats (seat_id, row_label, seat_number, showroom_id) VALUES (?, ?, ?, ?)")) {
+            pstmt.setString(1, "C3");
+            pstmt.setString(2, "C");
+            pstmt.setInt(3, 3);
+            pstmt.setString(4, showroomId);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Booking via service layer
+        BookingFunctions bf = new BookingFunctions();
+        List<Map<String, String>> tickets = List.of(Map.of("seatId", "C3", "type", "adult"));
+        String bookingId = bf.createBooking("1", movieId, showtimeId, tickets, null);
+        Assertions.assertNotNull(bookingId, "Booking creation failed in service layer");
+
+        // Verify booking stored and tickets are present
+        BookingDBFunctions bookingDB = new BookingDBFunctions();
+        Map<String, Object> booking = bookingDB.getBookingById(bookingId, "1");
+        Assertions.assertNotNull(booking, "Stored booking not found");
+        List<Map<String, Object>> storedTickets = (List<Map<String, Object>>) booking.get("tickets");
+        Assertions.assertNotNull(storedTickets);
+        Assertions.assertTrue(storedTickets.stream().anyMatch(t -> "C3".equals(t.get("seatId"))), "Ticket for C3 not found in stored booking");
     }
 }
