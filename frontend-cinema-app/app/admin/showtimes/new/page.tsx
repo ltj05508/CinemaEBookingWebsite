@@ -76,7 +76,7 @@ export default function NewShowtimePage() {
             }
 
             const payload = { movieId, showroomId, startTimeIso };
-            const res = await fetch("/api/showtimes", {
+            const res = await fetch("/api/admin/showtimes", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
