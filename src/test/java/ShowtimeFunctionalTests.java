@@ -1,23 +1,22 @@
-package testing;
+import backend.UserDBFunctions;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.Map;
-import backend.*;
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = backend.CinemaEBookSpringBoot.class
-)
+import backend.MovieDBFunctions;
+import backend.ShowtimeDBFunctions;
+import backend.BookingDBFunctions;
+import backend.BookingFunctions;
+import backend.DatabaseConnectSingleton;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ShowtimeFunctionalTests {
-
     @Autowired
     private TestRestTemplate restTemplate; // kept if we want to extend tests to use REST later
 
@@ -105,8 +104,9 @@ public class ShowtimeFunctionalTests {
         BookingDBFunctions bookingDB = new BookingDBFunctions();
         List<Map<String, String>> tickets = List.of(Map.of("seatId", "A1", "type", "adult"));
 
+        // Ensure booking_id is treated as an INT in tests
         Integer bookingId = bookingDB.createBooking("1", showtimeId, 12.00, null, tickets);
-        Assertions.assertNotNull(bookingId, "Booking creation failed");
+        Assertions.assertTrue(bookingId != null && bookingId > 0, "Booking creation failed");
         createdBookingIds.add(bookingId);
 
         // Check seat availability via BookingFunctions.getBookedSeats (converts PM -> 24hr)
@@ -158,7 +158,7 @@ public class ShowtimeFunctionalTests {
         BookingFunctions bf = new BookingFunctions();
         List<Map<String, String>> tickets = List.of(Map.of("seatId", "C3", "type", "adult"));
         Integer bookingId = bf.createBooking("1", movieId, showtimeId, tickets, null);
-        Assertions.assertNotNull(bookingId, "Booking creation failed in service layer");
+        Assertions.assertTrue(bookingId != null && bookingId > 0, "Booking creation failed in service layer");
         createdBookingIds.add(bookingId);
 
         // Verify booking stored and tickets are present

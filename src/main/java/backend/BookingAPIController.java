@@ -160,8 +160,7 @@ public class BookingAPIController {
             }
             
             // Create booking through service layer
-            String bookingId = bookingFunctions.createBooking(userId, movieId, showtimeId, tickets, promoCode);
-            
+            Integer bookingId = bookingFunctions.createBooking(userId, movieId, showtimeId, tickets, promoCode);
             if (bookingId == null) {
                 response.put("success", false);
                 response.put("message", "Failed to create booking. Seats may already be taken.");
@@ -201,7 +200,7 @@ public class BookingAPIController {
      * GET /api/booking/{bookingId}
      */
     @GetMapping("/{bookingId}")
-    public ResponseEntity<Map<String, Object>> getBooking(@PathVariable String bookingId,
+    public ResponseEntity<Map<String, Object>> getBooking(@PathVariable Integer bookingId,
                                                           HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         bookingFunctions = new BookingFunctions();

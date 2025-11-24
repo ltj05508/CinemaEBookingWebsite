@@ -37,6 +37,7 @@ public class TestDataCleanup {
             pstmt.close();
             System.out.println("Deleted Tickets: " + r1);
 
+            // Ensure booking_id is treated as an INT in cleanup queries
             String sql2 = "DELETE b FROM Bookings b JOIN Tickets t2 ON b.booking_id = t2.booking_id JOIN Showtimes s2 ON t2.showtime_id = s2.showtime_id JOIN Movies m2 ON s2.movie_id = m2.movie_id WHERE m2.title LIKE ?";
             pstmt = conn.prepareStatement(sql2);
             pstmt.setString(1, pattern);

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+// import java.util.UUID; // No longer needed for booking_id
 
 /**
  * Database functions for booking management.
@@ -119,32 +119,34 @@ public class BookingDBFunctions {
      * @param tickets List of tickets with seat and type information
      * @return Generated booking ID, or null if failed
      */
-    public String createBooking(String userId, Integer showtimeId, double totalPrice, 
+    public Integer createBooking(String userId, Integer showtimeId, double totalPrice, 
                                String promoId, List<Map<String, String>> tickets) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String bookingId = null;
+        Integer bookingId = null;
 
         try {
             // Start transaction
             dcs.getConn().setAutoCommit(false);
 
-            // Generate booking ID
-            bookingId = UUID.randomUUID().toString();
-
-            // Insert into Bookings table
-            String bookingSql = "INSERT INTO Bookings (booking_id, customer_id, status, total_price, promo_id) " +
-                               "VALUES (?, ?, ?, ?, ?)";
-            pstmt = dcs.getConn().prepareStatement(bookingSql);
-            pstmt.setString(1, bookingId);
-            pstmt.setString(2, userId);
-            pstmt.setString(3, "Confirmed");
-            pstmt.setDouble(4, totalPrice);
-            pstmt.setString(5, promoId);
-            
+            // Insert into Bookings table and get generated key
+            String bookingSql = "INSERT INTO Bookings (customer_id, status, total_price, promo_id) " +
+                               "VALUES (?, ?, ?, ?)";
+            pstmt = dcs.getConn().prepareStatement(bookingSql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setString(1, userId);
+            pstmt.setString(2, "Confirmed");
+            pstmt.setDouble(3, totalPrice);
+            pstmt.setString(4, promoId);
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected == 0) {
+                dcs.getConn().rollback();
+                return null;
+            }
+            rs = pstmt.getGeneratedKeys();
+            if (rs.next()) {
+                bookingId = rs.getInt(1);
+            } else {
                 dcs.getConn().rollback();
                 return null;
             }
@@ -154,24 +156,20 @@ public class BookingDBFunctions {
             String ticketSql = "INSERT INTO Tickets (ticket_id, seat_id, showtime_id, booking_id, price, type) " +
                               "VALUES (?, ?, ?, ?, ?, ?)";
             pstmt = dcs.getConn().prepareStatement(ticketSql);
-
             for (Map<String, String> ticket : tickets) {
-                String ticketId = UUID.randomUUID().toString();
+                String ticketId = java.util.UUID.randomUUID().toString(); // ticket_id can remain UUID
                 String seatId = ticket.get("seatId");
                 String type = ticket.get("type");
-                
                 // Get price based on type
                 double price = 12.00; // default adult
                 if ("senior".equals(type)) price = 10.00;
                 else if ("child".equals(type)) price = 8.00;
-
                 pstmt.setString(1, ticketId);
                 pstmt.setString(2, seatId);
                 pstmt.setInt(3, showtimeId);
-                pstmt.setString(4, bookingId);
+                pstmt.setInt(4, bookingId);
                 pstmt.setDouble(5, price);
                 pstmt.setString(6, type);
-                
                 pstmt.addBatch();
             }
 
@@ -189,7 +187,6 @@ public class BookingDBFunctions {
             // Commit transaction
             dcs.getConn().commit();
             System.out.println("Booking created successfully with ID: " + bookingId);
-            
             return bookingId;
 
         } catch (SQLException e) {
@@ -223,20 +220,17 @@ public class BookingDBFunctions {
      * @param userId User ID making the request
      * @return Booking details with tickets, or null if not found/unauthorized
      */
-    public Map<String, Object> getBookingById(String bookingId, String userId) {
+    public Map<String, Object> getBookingById(int bookingId, String userId) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
         try {
             // Get booking info
-            String sql = "SELECT b.booking_id, b.booking_date, b.status, b.total_price, " +
-                        "b.customer_id, b.promo_id " +
-                        "FROM Bookings b " +
-                        "WHERE b.booking_id = ? AND b.customer_id = ?";
+            String sql = "SELECT b.booking_id, b.booking_date, b.status, b.total_price, b.customer_id, b.promo_id FROM Bookings b WHERE b.booking_id = ? AND b.customer_id = ?";
             
             pstmt = dcs.getConn().prepareStatement(sql);
-            pstmt.setString(1, bookingId);
+            pstmt.setInt(1, bookingId);
             pstmt.setString(2, userId);
             rs = pstmt.executeQuery();
 
@@ -245,7 +239,7 @@ public class BookingDBFunctions {
             }
 
             Map<String, Object> booking = new HashMap<>();
-            booking.put("bookingId", rs.getString("booking_id"));
+            booking.put("bookingId", rs.getInt("booking_id"));
             booking.put("bookingDate", rs.getTimestamp("booking_date"));
             booking.put("status", rs.getString("status"));
             booking.put("totalPrice", rs.getDouble("total_price"));
@@ -261,7 +255,7 @@ public class BookingDBFunctions {
                   "WHERE t.booking_id = ?";
             
             pstmt = dcs.getConn().prepareStatement(sql);
-            pstmt.setString(1, bookingId);
+            pstmt.setInt(1, bookingId);
             rs = pstmt.executeQuery();
 
             List<Map<String, Object>> tickets = new ArrayList<>();

@@ -107,7 +107,7 @@ CREATE TABLE Showtimes (
 );
 
 CREATE TABLE IF NOT EXISTS Bookings (
-    booking_id     CHAR(50) PRIMARY KEY,
+    booking_id     INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     booking_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status        VARCHAR(50),
     total_price    DECIMAL(10,2),

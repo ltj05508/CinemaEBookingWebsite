@@ -102,7 +102,7 @@ public class BookingFunctions {
      * @param promoCode Optional promotion code
      * @return Booking ID if successful, null otherwise
      */
-    public String createBooking(String userId, Integer movieId, Integer showtimeId, 
+    public Integer createBooking(String userId, Integer movieId, Integer showtimeId, 
                                 List<Map<String, String>> tickets, String promoCode) {
         try {
             // Validate inputs
@@ -141,14 +141,12 @@ public class BookingFunctions {
             }
 
             // Create booking in database
-            String bookingId = bookingDBFunctions.createBooking(
+            Integer bookingId = bookingDBFunctions.createBooking(
                 userId, showtimeId, totalPrice, promoId, tickets
             );
-
             if (bookingId != null) {
                 System.out.println("Booking created successfully: " + bookingId);
             }
-
             return bookingId;
 
         } catch (Exception e) {
@@ -166,14 +164,12 @@ public class BookingFunctions {
      * @param userId The user ID making the request
      * @return Booking details or null if not found/unauthorized
      */
-    public Map<String, Object> getBookingById(String bookingId, String userId) {
+    public Map<String, Object> getBookingById(Integer bookingId, String userId) {
         try {
             if (bookingId == null || userId == null) {
                 return null;
             }
-
             return bookingDBFunctions.getBookingById(bookingId, userId);
-
         } catch (Exception e) {
             System.err.println("Error retrieving booking: " + e.getMessage());
             e.printStackTrace();
@@ -191,7 +187,7 @@ public class BookingFunctions {
      * @param showtimeId Showtime ID
      * @param tickets List of tickets with seat and type information
      */
-    public void sendBookingConfirmation(String bookingId, String email, String firstName,
+    public void sendBookingConfirmation(Integer bookingId, String email, String firstName,
                                        Integer movieId, Integer showtimeId,
                                        List<Map<String, String>> tickets) {
         try {
@@ -247,7 +243,7 @@ public class BookingFunctions {
             
             // Send email
             emailService.sendBookingConfirmationEmail(
-                email, firstName, bookingId, movieTitle, showtime, seatIds, totalPrice
+                email, firstName, String.valueOf(bookingId), movieTitle, showtime, seatIds, totalPrice
             );
             
             System.out.println("Booking confirmation email sent to: " + email);
