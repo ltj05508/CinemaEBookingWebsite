@@ -470,7 +470,6 @@ export default function BookingPage({ params }: PageProps) {
 
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold">Select your seats</h1>
-          <h1 className="text-2xl font-semibold">{reservedSeats}</h1>
           <p className="opacity-70">
             {movie.title} • {showtime}
           </p>

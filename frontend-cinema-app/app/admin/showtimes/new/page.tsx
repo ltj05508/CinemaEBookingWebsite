@@ -27,7 +27,7 @@ export default function NewShowtimePage() {
         (async () => {
             const status = await getAuthStatus();
             const role = String(status?.user?.role ?? "").toLowerCase();
-            if (!status?.loggedIn) router.replace(`/login?redirect=${encodeURIComponent("/admin/showtimes/new")}`);
+            if (!status?.loggedIn) router.replace(`/login?redirect=${encodeURIComponent("/auth/showtimes/new")}`);
             if (role !== "admin") router.replace("/account");
 
             try {
@@ -131,14 +131,17 @@ export default function NewShowtimePage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm mb-1">Start (local) *</label>
-                        <input
-                            name="startLocal"
-                            type="datetime-local"
-                            required
-                            className="w-full border rounded-xl px-3 py-2 bg-white"
-                            step={60} // minute precision
-                        />
+                        <label className="block text-sm mb-1">Showtime *</label>
+                        <select name="showtime" required className="w-full border rounded-xl px-3 py-2" defaultValue="">
+                            <option value="" disabled>
+                                Select a movie
+                            </option>
+                            {movies.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.title}
+                                </option>
+                            ))}
+                            </select>
                     </div>
 
                     <div className="flex gap-3">

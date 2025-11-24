@@ -638,4 +638,189 @@ public class AuthAPIController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+
+    //---------------------ADMIN FUNCTIONS------------------
+
+
+    private ResponseEntity<Map<String, Object>> checkAdminAuth(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+        if (loggedIn == null || !loggedIn) {
+            response.put("success", false);
+            response.put("message", "Not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        String role = (String) session.getAttribute("role");
+        if (!"ADMIN".equalsIgnoreCase(role)) {
+            response.put("success", false);
+            response.put("message", "Unauthorized - Admin access required");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+
+        return null; // Auth successful
+    }
+
+    /**
+     * Add a new movie.
+     * POST /api/admin/movies
+     * Body: { "title": "Movie Title", "genre": "Action", "rating": "PG-13",
+     *         "description": "...", "durationMinutes": 120,
+     *         "posterUrl": "...", "trailerUrl": "...", "currentlyShowing": true }
+     */
+    @PostMapping("/movies")
+    public ResponseEntity<Map<String, Object>> addMovie(@RequestBody Map<String, Object> request,
+                                                        HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check admin auth
+        /*
+        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
+        if (authCheck != null) return authCheck;
+        */
+
+
+        try {
+            // Extract and validate movie data
+            String title = (String) request.get("title");
+            String genre = (String) request.get("genres");
+            String rating = (String) request.get("rating");
+            String description = (String) request.get("description");
+            Integer durationMinutes = (Integer) request.get("durationMinutes");
+            String posterUrl = (String) request.get("posterUrl");
+            String trailerUrl = (String) request.get("trailerUrl");
+
+            Boolean currentlyShowing;
+            if (request.get("status").equals("RUNNING")) {
+                currentlyShowing = true;
+            } else {
+                currentlyShowing = false;
+            }
+            //Boolean currentlyShowing = (Boolean) request.get("currentlyShowing");
+
+
+            // Validate required fields
+            if (title == null || title.trim().isEmpty() ||
+                    genre == null || genre.trim().isEmpty() ||
+                    rating == null || rating.trim().isEmpty() ||
+                    description == null || description.trim().isEmpty() ||
+                    durationMinutes == null || durationMinutes <= 0) {
+                response.put("success", false);
+                response.put("message", "Missing required fields");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Set defaults
+            if (currentlyShowing == null) currentlyShowing = false;
+
+            // Call database function to insert movie
+            int movieId = MovieDBFunctions.addMovie(title, genre, rating, description,
+                    durationMinutes, posterUrl, trailerUrl, currentlyShowing);
+
+            if (movieId > 0) {
+                response.put("success", true);
+                response.put("message", "Movie added successfully");
+                response.put("movieId", movieId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to add movie");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/showrooms")
+    public ResponseEntity<Map<String, Object>> getShowrooms(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check admin auth
+
+        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
+        if (authCheck != null) return authCheck;
+
+
+
+        try {
+            // Call database function to get showrooms
+            List<Map<String, Object>> showrooms = ShowtimeDBFunctions.getAllShowrooms();
+
+            response.put("success", true);
+            response.put("showrooms", showrooms);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Add a showtime for a movie.
+     * POST /api/admin/showtimes
+     * Body: { "movieId": 1, "showroomId": "1", "showtime": "19:30:00" }
+     */
+    @PostMapping("/showtimes")
+    public ResponseEntity<Map<String, Object>> addShowtime(@RequestBody Map<String, Object> request,
+                                                           HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Check admin auth
+        /*
+        ResponseEntity<Map<String, Object>> authCheck = checkAdminAuth(session);
+        if (authCheck != null) return authCheck;
+         */
+
+        try {
+            // Extract showtime data
+            Integer movieId = (Integer) request.get("movieId");
+            String showroomId = (String) request.get("showroomId");
+            String showtime = (String) request.get("showtime");
+
+            // Validate required fields
+            if (movieId == null ||
+                    showroomId == null || showroomId.trim().isEmpty() ||
+                    showtime == null || showtime.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Missing required fields (movieId, showroomId, showtime)");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Check for showtime conflicts (same showroom, time)
+            boolean hasConflict = ShowtimeDBFunctions.checkConflict(showroomId, showtime);
+            if (hasConflict) {
+                response.put("success", false);
+                response.put("message", "Showtime conflict: This showroom is already booked at this time");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            }
+
+            // Call database function to add showtime
+            int showtimeId = ShowtimeDBFunctions.addShowtime(movieId, showroomId, showtime);
+
+            if (showtimeId > 0) {
+                response.put("success", true);
+                response.put("message", "Showtime added successfully");
+                response.put("showtimeId", showtimeId);
+            } else {
+                response.put("success", false);
+                response.put("message", "Failed to add showtime");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 }
