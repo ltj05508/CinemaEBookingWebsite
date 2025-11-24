@@ -25,10 +25,6 @@ public class BookingAPIController {
     private BookingFunctions bookingFunctions;
 
 
-
-
-    // ==================== MOVIE MANAGEMENT ====================
-
     /**
      * Returns the seats (available/unavailable) for a selected showtime.
      * GET /api/booking/seats/{id}/{showtime}

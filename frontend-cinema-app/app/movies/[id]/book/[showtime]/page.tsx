@@ -171,14 +171,14 @@ export default function BookingPage({ params }: PageProps) {
           </p>
         </header>
 
-        {/* Screen visual */}
+        {/* Screen visual *//*}
 /*
         <div className="relative h-10">
           <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 mx-auto w-3/4 h-1 rounded-full bg-gray-300" />
           <p className="text-center text-xs mt-6 opacity-70">SCREEN</p>
         </div>
 
-        {/* Legend */}
+        {/* Legend *//*}
 /*
         <div className="flex items-center gap-4 text-sm">
           <LegendSwatch className="border" label="Available" />
@@ -186,7 +186,7 @@ export default function BookingPage({ params }: PageProps) {
           <LegendSwatch className="bg-black text-white" label="Selected" />
         </div>
 
-        {/* Seat grid */}
+        {/* Seat grid *//*}
 /*
         <div className="overflow-x-auto rounded-2xl border p-4 bg-white">
           <div className="inline-block">
@@ -213,7 +213,7 @@ export default function BookingPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary *//*}
 /*
       <aside className="space-y-4">
         <div className="rounded-2xl border p-4">
