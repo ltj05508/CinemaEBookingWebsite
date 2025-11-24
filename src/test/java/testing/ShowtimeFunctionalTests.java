@@ -21,6 +21,9 @@ public class ShowtimeFunctionalTests {
     @Autowired
     private TestRestTemplate restTemplate; // kept if we want to extend tests to use REST later
 
+    //@Autowired
+    //DataSource ds;
+
     // Track created entities so each test can clean up after itself
     private final java.util.List<Integer> createdMovieIds = new java.util.ArrayList<>();
     private final java.util.List<Integer> createdShowtimeIds = new java.util.ArrayList<>();
@@ -263,6 +266,7 @@ public class ShowtimeFunctionalTests {
 
         java.sql.Connection conn = DatabaseConnectSingleton.getInstance().getConn();
         java.sql.PreparedStatement pstmt = null;
+
         try {
             // Delete tickets and bookings first
             for (Integer bookingId : createdBookingIds) {
@@ -321,5 +325,8 @@ public class ShowtimeFunctionalTests {
             createdMovieIds.clear();
             createdUserIds.clear();
         }
+
+
     }
+
 }

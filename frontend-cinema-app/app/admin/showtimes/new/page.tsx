@@ -131,17 +131,8 @@ export default function NewShowtimePage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm mb-1">Showtime *</label>
-                        <select name="showtime" required className="w-full border rounded-xl px-3 py-2" defaultValue="">
-                            <option value="" disabled>
-                                Select a movie
-                            </option>
-                            {movies.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.title}
-                                </option>
-                            ))}
-                            </select>
+                        <label className="block text-sm mb-1">Showtime (Military Time)*</label>         
+                        <input name="showtime" required placeholder="14:00:00" className="w-full border rounded-xl px-3 py-2" />
                     </div>
 
                     <div className="flex gap-3">

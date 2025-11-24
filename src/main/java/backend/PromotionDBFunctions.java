@@ -30,7 +30,7 @@ public class PromotionDBFunctions {
         String promoId = UUID.randomUUID().toString();
 
         try {
-            String sql = "INSERT INTO Promotions (promo_id, code, description, discount_percent, valid_from, valid_to) " +
+            String sql = "INSERT INTO Promotions (promo_id, code, description, discount_percent, CAST(valid_from AS DATE), CAST(valid_to AS DATE)) " +
                         "VALUES (?, ?, ?, ?, ?, ?)";
             
             pstmt = dcs.getConn().prepareStatement(sql);
