@@ -164,9 +164,9 @@ VALUES
 
 INSERT INTO Showrooms (showroom_id, name, seat_count, num_of_rows, num_of_cols, theatre_id)
 VALUES
-('1', 'Showroom1', 96, 8, 12, 1),
-('2', 'Showroom2', 100, 10, 10, 1),
-('3', 'RoyalShowroom', 132, 12, 11, 2);
+('1', 'Showroom1', 75, 5, 15, 1),
+('2', 'Showroom2', 105, 7, 15, 1),
+('3', 'RoyalShowroom', 150, 10, 15, 2);
 
 -- Insert showtimes (only once per movie-time combination)
 INSERT INTO Showtimes (movie_id, showroom_id, showtime) VALUES
@@ -207,8 +207,14 @@ VALUES
 
 INSERT INTO Bookings(booking_id, booking_date, status, total_price, customer_id, promo_id)
 VALUES
-('1', CURRENT_TIMESTAMP, 'active', 12, 1, '1');
+('1', CURRENT_TIMESTAMP, 'active', 24, 1, '1'),
+('2', CURRENT_TIMESTAMP, 'active', 12, 2, '1');
 
 INSERT INTO Tickets(ticket_id, seat_id, showtime_id, booking_id, price, type)
 VALUES
-('1', 'Ax5', 4, 1, 10, 'adult');
+('1', 'Ax5', 4, 1, 10, 'adult'),
+('2', 'Cx5', 9, 1, 10, 'adult'),
+('3', 'Dx6', 4, 2, 10, 'adult'),
+('4', 'Dx7', 4, 2, 10, 'adult'),
+('5', 'Ax6', 4, 1, 10, 'adult');
+
