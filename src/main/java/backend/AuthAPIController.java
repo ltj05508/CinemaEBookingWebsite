@@ -911,7 +911,7 @@ public class AuthAPIController {
 
         try {
             // Extract showtime data
-            Integer movieId = (Integer) request.get("movieId");
+            Integer movieId = Integer.parseInt((String) request.get("movieId"));
             String showroomId = (String) request.get("showroomId");
             String showtime = (String) request.get("showtime");
 
