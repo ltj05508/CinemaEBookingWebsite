@@ -95,7 +95,7 @@ export default function ShowtimeChips({
             onClick={() =>
               router.push(`/movies/${movieId}/book/${encodeURIComponent(t)}`)
             }
-            className="text-sm rounded-lg border px-3 py-1 bg-white hover:bg-gray-50 cursor-pointer"
+            className="text-sm font-semibold text-gray-900 rounded-lg border border-gray-300 px-3 py-1 bg-white hover:bg-gray-100 shadow-sm"
           >
             {t}
           </button>
