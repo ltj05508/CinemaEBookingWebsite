@@ -517,8 +517,9 @@ public class AuthAPIController {
     /**
      * Get the current user's payment cards (masked).
      * GET /api/auth/payment-cards
+     * GET /api/profile/cards
      */
-    @GetMapping("/payment-cards")
+    @GetMapping({"/payment-cards", "/api/profile/cards"})
     public ResponseEntity<Map<String, Object>> getPaymentCards(HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
@@ -538,12 +539,11 @@ public class AuthAPIController {
                 String last4 = num.length() >= 4 ? num.substring(num.length() - 4) : num;
                 String masked = "**** **** **** " + last4;
                 java.util.Map<String, Object> m = new java.util.HashMap<>();
-                //m.put("cardId", c.getCardId());
-                //m.put("cardNumber", num);
+                m.put("cardId", c.getCardId());
+                m.put("cardNumber", masked);
                 m.put("last4", last4);
-                //m.put("masked", masked);
-                m.put("expirationMonth", c.getExpirationDate() != null ? c.getExpirationDate().toString() : null);
-                //m.put("billingAddressId", c.getBillingAddressId());
+                m.put("expirationDate", c.getExpirationDate() != null ? c.getExpirationDate().toString() : null);
+                m.put("billingAddressId", c.getBillingAddressId());
                 out.add(m);
             }
 

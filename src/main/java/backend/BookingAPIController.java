@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * REST API Controller for booking endpoints.
@@ -17,9 +18,11 @@ import java.util.Map;
  */
 @RestController
 //@RequestMapping("/api/booking")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3002"}, allowCredentials = "true")
 public class BookingAPIController {
-    //@Autowired
+    @Autowired
+    private EmailService emailService;
+    
     private BookingFunctions bookingFunctions;
 
     @GetMapping("/api/booking/test")
@@ -111,44 +114,35 @@ public class BookingAPIController {
         }
     }
 
-    // ==================== BOOKING MANAGEMENT ====================
-
     /**
-     * Create a new booking with tickets.
-     * POST /api/booking/create
+     * Calculate order quote with optional promotion code.
+     * POST /api/booking/quote
      * Body: {
      *   "movieId": 1,
      *   "showtimeId": 1,
-     *   "seats": ["A1", "A2"],
-     *   "tickets": [
-     *     {"seatId": "A1", "type": "adult"},
-     *     {"seatId": "A2", "type": "child"}
-     *   ],
-     *   "promoCode": "PROMO123" (optional)
+     *   "tickets": [{"seatId": "A1", "type": "adult"}, {"seatId": "A2", "type": "child"}],
+     *   "promoCode": "SAVE20" (optional)
      * }
      */
-    @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createBooking(@RequestBody Map<String, Object> request,
-                                                             HttpSession session) {
+    @PostMapping("/quote")
+    public ResponseEntity<Map<String, Object>> calculateQuote(@RequestBody Map<String, Object> request,
+                                                              HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        bookingFunctions = new BookingFunctions();
         
         try {
-            // Check if user is logged in
-            /*
-            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
-            if (loggedIn == null || !loggedIn) {
-                response.put("success", false);
-                response.put("message", "You must be logged in to create a booking");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            // Extract data
+            Integer movieId = null;
+            Object movieIdObj = request.get("movieId");
+            if (movieIdObj != null) {
+                movieId = Integer.valueOf(movieIdObj.toString());
             }
-             */
             
-            String userId = (String) session.getAttribute("userId");
+            Integer showtimeId = null;
+            Object showtimeIdObj = request.get("showtimeId");
+            if (showtimeIdObj != null) {
+                showtimeId = Integer.valueOf(showtimeIdObj.toString());
+            }
             
-            // Extract booking data
-            Integer movieId = (Integer) request.get("movieId");
-            Integer showtimeId = (Integer) request.get("showtimeId");
             List<Map<String, String>> tickets = (List<Map<String, String>>) request.get("tickets");
             String promoCode = (String) request.get("promoCode");
             
@@ -159,8 +153,158 @@ public class BookingAPIController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // Create booking through service layer
-            Integer bookingId = bookingFunctions.createBooking(userId, movieId, showtimeId, tickets, promoCode);
+            // Calculate subtotal based on ticket types
+            double subtotal = 0.0;
+            for (Map<String, String> ticket : tickets) {
+                String type = ticket.get("type");
+                if ("senior".equals(type)) {
+                    subtotal += 10.00;
+                } else if ("child".equals(type)) {
+                    subtotal += 8.00;
+                } else {
+                    subtotal += 12.00; // adult or default
+                }
+            }
+            
+            // Apply promotion if provided
+            double discount = 0.0;
+            String appliedPromoId = null;
+            if (promoCode != null && !promoCode.trim().isEmpty()) {
+                Map<String, Object> promo = PromotionDBFunctions.getPromotionByCode(promoCode);
+                if (promo != null && PromotionDBFunctions.isPromotionActive(promoCode)) {
+                    double discountPercent = (Double) promo.get("discountPercent");
+                    discount = subtotal * (discountPercent / 100.0);
+                    appliedPromoId = (String) promo.get("promoId");
+                } else {
+                    response.put("success", false);
+                    response.put("message", "Invalid or expired promotion code");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+            
+            double total = subtotal - discount;
+            
+            Map<String, Object> quote = new HashMap<>();
+            quote.put("subtotal", subtotal);
+            quote.put("discount", discount);
+            quote.put("total", total);
+            if (appliedPromoId != null) {
+                quote.put("promoId", appliedPromoId);
+            }
+            
+            response.put("success", true);
+            response.put("quote", quote);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    // ==================== BOOKING MANAGEMENT ====================
+
+    /**
+     * Create a new booking with tickets.
+     * POST /api/booking/create
+     * Body: {
+     *   "movieId": 1,
+     *   "showtimeId": 1,
+     *   "tickets": [
+     *     {"seatId": "A1", "type": "adult"},
+     *     {"seatId": "A2", "type": "child"}
+     *   ],
+     *   "promoCode": "PROMO123" (optional),
+     *   "cardId": "card-uuid" (required)
+     * }
+     */
+    @PostMapping("/create")
+    public ResponseEntity<Map<String, Object>> createBooking(@RequestBody Map<String, Object> request,
+                                                             HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        BookingDBFunctions bookingDB = new BookingDBFunctions();
+        
+        try {
+            // Check if user is logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "You must be logged in to create a booking");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            String email = (String) session.getAttribute("email");
+            String firstName = (String) session.getAttribute("firstName");
+            
+            // Extract booking data
+            Integer movieId = null;
+            Object movieIdObj = request.get("movieId");
+            if (movieIdObj != null) {
+                movieId = Integer.valueOf(movieIdObj.toString());
+            }
+            
+            Integer showtimeId = null;
+            Object showtimeIdObj = request.get("showtimeId");
+            if (showtimeIdObj != null) {
+                showtimeId = Integer.valueOf(showtimeIdObj.toString());
+            }
+            
+            List<Map<String, String>> tickets = (List<Map<String, String>>) request.get("tickets");
+            String promoCode = (String) request.get("promoCode");
+            String cardId = (String) request.get("cardId");
+            
+            // Validate required fields
+            if (movieId == null || showtimeId == null || tickets == null || tickets.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Missing required fields (movieId, showtimeId, tickets)");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            if (cardId == null || cardId.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Payment card is required");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Verify card belongs to user
+            List<PaymentCard> userCards = UserDBFunctions.getCustomerPaymentCards(userId);
+            boolean cardValid = userCards.stream().anyMatch(c -> cardId.equals(c.getCardId()));
+            if (!cardValid) {
+                response.put("success", false);
+                response.put("message", "Invalid payment card");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Calculate total price
+            double totalPrice = 0.0;
+            for (Map<String, String> ticket : tickets) {
+                String type = ticket.get("type");
+                if ("senior".equals(type)) {
+                    totalPrice += 10.00;
+                } else if ("child".equals(type)) {
+                    totalPrice += 8.00;
+                } else {
+                    totalPrice += 12.00;
+                }
+            }
+            
+            // Apply promotion if provided
+            String promoId = null;
+            if (promoCode != null && !promoCode.trim().isEmpty()) {
+                Map<String, Object> promo = PromotionDBFunctions.getPromotionByCode(promoCode);
+                if (promo != null && PromotionDBFunctions.isPromotionActive(promoCode)) {
+                    double discountPercent = (Double) promo.get("discountPercent");
+                    double discount = totalPrice * (discountPercent / 100.0);
+                    totalPrice -= discount;
+                    promoId = (String) promo.get("promoId");
+                }
+            }
+            
+            // Create booking
+            Integer bookingId = bookingDB.createBooking(userId, showtimeId, totalPrice, promoId, tickets);
             if (bookingId == null) {
                 response.put("success", false);
                 response.put("message", "Failed to create booking. Seats may already be taken.");
@@ -168,19 +312,41 @@ public class BookingAPIController {
             }
             
             // Send confirmation email
-            /*
             try {
-                String email = (String) session.getAttribute("email");
-                String firstName = (String) session.getAttribute("firstName");
-                
-                if (email != null && firstName != null) {
-                    bookingFunctions.sendBookingConfirmation(bookingId, email, firstName, movieId, showtimeId, tickets);
+                if (email != null && firstName != null && emailService != null) {
+                    // Get movie and showtime details for email
+                    Movie movie = MovieDBFunctions.getMovieById(movieId);
+                    String movieTitle = movie != null ? movie.getTitle() : "Movie #" + movieId;
+                    
+                    // Get showtime
+                    String showtime = "N/A";
+                    try {
+                        List<Map<String, Object>> showtimes = ShowtimeDBFunctions.getShowtimesByMovie(movieId);
+                        for (Map<String, Object> st : showtimes) {
+                            if (showtimeId.equals(st.get("showtimeId"))) {
+                                showtime = String.valueOf(st.get("showtime"));
+                                break;
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Could not fetch showtime: " + e.getMessage());
+                    }
+                    
+                    List<String> seatIds = new ArrayList<>();
+                    for (Map<String, String> ticket : tickets) {
+                        seatIds.add(ticket.get("seatId"));
+                    }
+                    
+                    emailService.sendBookingConfirmationEmail(
+                        email, firstName, String.valueOf(bookingId),
+                        movieTitle, showtime, seatIds, totalPrice
+                    );
                 }
             } catch (Exception e) {
                 // Log error but don't fail the booking
                 System.err.println("Failed to send confirmation email: " + e.getMessage());
+                e.printStackTrace();
             }
-             */
             
             response.put("success", true);
             response.put("message", "Booking created successfully");
@@ -191,6 +357,7 @@ public class BookingAPIController {
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Internal server error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -203,7 +370,7 @@ public class BookingAPIController {
     public ResponseEntity<Map<String, Object>> getBooking(@PathVariable Integer bookingId,
                                                           HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-        bookingFunctions = new BookingFunctions();
+        BookingDBFunctions bookingDB = new BookingDBFunctions();
 
         try {
             // Check if user is logged in
@@ -217,7 +384,7 @@ public class BookingAPIController {
             String userId = (String) session.getAttribute("userId");
             
             // Get booking details
-            Map<String, Object> booking = bookingFunctions.getBookingById(bookingId, userId);
+            Map<String, Object> booking = bookingDB.getBookingById(bookingId, userId);
             
             if (booking == null) {
                 response.put("success", false);
@@ -227,6 +394,40 @@ public class BookingAPIController {
             
             response.put("success", true);
             response.put("booking", booking);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Internal server error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Get order history for the logged-in user.
+     * GET /api/profile/bookings
+     */
+    @GetMapping("/api/profile/bookings")
+    public ResponseEntity<Map<String, Object>> getOrderHistory(HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Check if user is logged in
+            Boolean loggedIn = (Boolean) session.getAttribute("loggedIn");
+            if (loggedIn == null || !loggedIn) {
+                response.put("success", false);
+                response.put("message", "You must be logged in to view order history");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String userId = (String) session.getAttribute("userId");
+            
+            // Get all bookings for user
+            List<Map<String, Object>> bookings = UserDBFunctions.getCustomerBookings(userId);
+            
+            response.put("success", true);
+            response.put("bookings", bookings);
             
             return ResponseEntity.ok(response);
             

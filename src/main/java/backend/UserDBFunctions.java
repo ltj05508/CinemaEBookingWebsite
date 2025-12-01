@@ -721,4 +721,47 @@ public class UserDBFunctions {
         
         return subscribedUsers;
     }
+
+    /**
+     * Get all bookings for a specific customer.
+     * @param customerId The customer ID
+     * @return List of booking maps with details
+     */
+    public static List<java.util.Map<String, Object>> getCustomerBookings(String customerId) {
+        DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
+        List<java.util.Map<String, Object>> bookings = new ArrayList<>();
+        
+        try {
+            String sql = "SELECT b.booking_id, b.booking_date, b.status, b.total_price, b.promo_id, " +
+                        "COUNT(t.ticket_id) as ticket_count " +
+                        "FROM Bookings b " +
+                        "LEFT JOIN Tickets t ON b.booking_id = t.booking_id " +
+                        "WHERE b.customer_id = ? " +
+                        "GROUP BY b.booking_id, b.booking_date, b.status, b.total_price, b.promo_id " +
+                        "ORDER BY b.booking_date DESC";
+            
+            PreparedStatement stmt = dcs.getConn().prepareStatement(sql);
+            stmt.setString(1, customerId);
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                java.util.Map<String, Object> booking = new java.util.HashMap<>();
+                booking.put("bookingId", rs.getInt("booking_id"));
+                booking.put("bookingDate", rs.getTimestamp("booking_date"));
+                booking.put("status", rs.getString("status"));
+                booking.put("totalPrice", rs.getDouble("total_price"));
+                booking.put("promoId", rs.getString("promo_id"));
+                booking.put("ticketCount", rs.getInt("ticket_count"));
+                bookings.add(booking);
+            }
+            
+            System.out.println("Found " + bookings.size() + " bookings for customer " + customerId);
+            
+        } catch (SQLException e) {
+            System.err.println("Error getting customer bookings: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return bookings;
+    }
 }
