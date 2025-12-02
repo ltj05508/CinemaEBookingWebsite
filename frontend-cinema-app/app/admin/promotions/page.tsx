@@ -30,8 +30,8 @@ export default function PromotionsPage() {
         const startDate = String(fd.get("startDate") || "");
         const endDate = String(fd.get("endDate") || "");
         const discountPercent = Number(fd.get("discountPercent") || 0);
-        const subject = "New Promotion!";
-        const message = "There is a brand new promotion from the team at CinemaEBooking!\nPromotion Code: " + promoCode + "\nPromo Description: " + description + "\n";
+        //const subject = "New Promotion!";
+        //const message = "There is a brand new promotion from the team at CinemaEBooking!\nPromotion Code: " + promoCode + "\nPromo Description: " + description + "\n";
         //const emailNow = fd.get("emailNow") === "on";
 
         if (!promoCode || !startDate || !description || !endDate || !(discountPercent > 0 && discountPercent <= 100)) {
@@ -54,11 +54,13 @@ export default function PromotionsPage() {
             if (!createRes.ok) throw new Error(`Create failed (${createRes.status})`);
             const created = await createRes.json();
 
-            if (created?.id) {
+            if (createRes.ok) {
+                const subject = "New Promotion!";
+                const message = "There is a brand new promotion from the team at CinemaEBooking!\nPromotion Code: " + promoCode + "\nPromo Description: " + description + "\n";
                 const emailRes = await fetch(`${API_BASE}/api/auth/promotions/email`, {
                      method: "POST", 
                      headers: { "Content-Type": "application/json" },
-                     body: JSON.stringify({ subject, message}),
+                     body: JSON.stringify({ subject, message }),
                     }); //${encodeURIComponent(created.id)}
                 if (!emailRes.ok) throw new Error("Created, but email send failed.");
             }

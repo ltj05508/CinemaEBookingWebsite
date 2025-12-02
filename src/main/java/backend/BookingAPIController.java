@@ -25,6 +25,8 @@ public class BookingAPIController {
     
     private BookingFunctions bookingFunctions;
 
+    private MovieSearchandFilter movieSearchandFilter;
+
     @GetMapping("/api/booking/test")
     public void testingMethod() {
         System.out.println("\nTest called!\n");
@@ -225,6 +227,7 @@ public class BookingAPIController {
                                                              HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         BookingDBFunctions bookingDB = new BookingDBFunctions();
+        movieSearchandFilter = new MovieSearchandFilter();
         
         try {
             // Check if user is logged in
@@ -315,7 +318,7 @@ public class BookingAPIController {
             try {
                 if (email != null && firstName != null && emailService != null) {
                     // Get movie and showtime details for email
-                    Movie movie = MovieDBFunctions.getMovieById(movieId);
+                    Movie movie = movieSearchandFilter.getMovieById(movieId);
                     String movieTitle = movie != null ? movie.getTitle() : "Movie #" + movieId;
                     
                     // Get showtime
