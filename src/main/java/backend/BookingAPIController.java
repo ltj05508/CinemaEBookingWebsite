@@ -27,7 +27,7 @@ public class BookingAPIController {
 
     private MovieSearchandFilter movieSearchandFilter;
 
-    @GetMapping("/api/booking/test")
+    @GetMapping("/api/booking/tes")
     public void testingMethod() {
         System.out.println("\nTest called!\n");
     }

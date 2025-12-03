@@ -27,7 +27,7 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
       setError('Missing booking id');
       return;
     }
-    fetch(`/api/booking/${bookingId}`, { credentials: 'include' })
+    fetch(`/api/auth/booking/${bookingId}`, { credentials: 'include' })
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
         return res.json();

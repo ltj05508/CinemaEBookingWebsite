@@ -35,7 +35,7 @@ export const postQuote = (body: {
   promoCode?: string;
 }) =>
   jsonFetch<{ quote: { subtotal: number; discount: number; total: number } }>(
-    `${API_BASE}/api/booking/quote`,
+    `${API_BASE}/api/auth/booking/quote`,
     {
       method: 'POST',
       body: JSON.stringify(body),
@@ -50,7 +50,7 @@ export const postBooking = (body: {
   cardId: string;
   billingAddressId?: string;
 }) =>
-  jsonFetch<{ bookingId: number }>(`${API_BASE}/api/booking/create`, {
+  jsonFetch<{ bookingId: number }>(`${API_BASE}/api/auth/create`, {
     method: 'POST',
     body: JSON.stringify(body),
   });
