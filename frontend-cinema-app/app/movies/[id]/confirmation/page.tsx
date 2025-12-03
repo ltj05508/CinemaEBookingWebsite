@@ -47,7 +47,7 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
   if (!movieId) return notFound();
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
+    <div className="max-w-3xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen text-gray-900">
       <div className="flex items-center gap-3 text-sm">
         <Link href={`/movies/${movieId}`} className="hover:underline">
           ← Back to movie
@@ -141,3 +141,4 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
     </div>
   );
 }
+
