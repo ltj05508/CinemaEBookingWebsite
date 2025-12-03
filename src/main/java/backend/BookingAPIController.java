@@ -17,7 +17,7 @@ import java.util.ArrayList;
  *
  */
 @RestController
-//@RequestMapping("/api/booking")
+@RequestMapping("/api/booking")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3002"}, allowCredentials = "true")
 public class BookingAPIController {
     @Autowired
@@ -27,7 +27,7 @@ public class BookingAPIController {
 
     private MovieSearchandFilter movieSearchandFilter;
 
-    @GetMapping("/api/booking/tes")
+    @GetMapping("/api/booking/test")
     public void testingMethod() {
         System.out.println("\nTest called!\n");
     }
@@ -310,7 +310,12 @@ public class BookingAPIController {
             Integer bookingId = bookingDB.createBooking(userId, showtimeId, totalPrice, promoId, tickets);
             if (bookingId == null) {
                 response.put("success", false);
-                response.put("message", "Failed to create booking. Seats may already be taken.");
+                String dbMessage = bookingDB.getLastError();
+                if (dbMessage != null && !dbMessage.isBlank()) {
+                    response.put("message", dbMessage);
+                } else {
+                    response.put("message", "Failed to create booking. Seats may already be taken.");
+                }
                 return ResponseEntity.badRequest().body(response);
             }
             
