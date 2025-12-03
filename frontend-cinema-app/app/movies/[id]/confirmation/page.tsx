@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use as reactUse } from 'react';
 import Link from 'next/link';
 import { useSearchParams, notFound } from 'next/navigation';
+import { getBooking } from '@/lib/bookingApi';
 
 type Params = { id: string };
 type Booking = {
@@ -27,19 +28,19 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
       setError('Missing booking id');
       return;
     }
-    fetch(`/api/auth/booking/${bookingId}`, { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-      })
+    getBooking(bookingId)
       .then((data) => {
         if (!data?.booking) throw new Error('No booking found');
         setBooking(data.booking as Booking);
         setError(null);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error('Load booking failed', err);
-        setError('Unable to load booking details. Please sign in and try again.');
+        const msg =
+          typeof err?.message === 'string' && err.message
+            ? err.message
+            : 'Unable to load booking details. Please sign in and try again.';
+        setError(msg);
       });
   }, [bookingId]);
 
