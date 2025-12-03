@@ -83,6 +83,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/movies/**").permitAll()
                 .requestMatchers("/api/genres").permitAll()
                 .requestMatchers("/api/profile/**").permitAll()  // Changed to permitAll - we handle auth in controllers
+                .requestMatchers("/api/booking/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 
                 // All other requests require authentication by default
