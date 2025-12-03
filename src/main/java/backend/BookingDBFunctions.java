@@ -13,6 +13,78 @@ import java.util.Map;
 public class BookingDBFunctions {
     public BookingDBFunctions() { }
 
+    // Keeps the last error message for caller diagnostics
+    private String lastError = null;
+
+    public String getLastError() {
+        return lastError;
+    }
+
+    // Generates the next booking ID in case the DB does not auto-generate it
+    private Integer getNextBookingId(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT IFNULL(MAX(booking_id), 0) + 1 AS nextId FROM Bookings");
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("nextId");
+            }
+        }
+        return null;
+    }
+
+    private String getShowroomIdForShowtime(Integer showtimeId, Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT showroom_id FROM Showtimes WHERE showtime_id = ?")) {
+            ps.setInt(1, showtimeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("showroom_id");
+                }
+            }
+        }
+        return null;
+    }
+
+    private void ensureSeatsExist(List<Map<String, String>> tickets, String showroomId, Connection conn) throws SQLException {
+        if (tickets == null || tickets.isEmpty() || showroomId == null) return;
+
+        for (Map<String, String> ticket : tickets) {
+            String seatId = ticket.get("seatId");
+            if (seatId == null || seatId.isBlank()) continue;
+
+            // Parse row label (letters) and seat number (digits)
+            int split = 0;
+            while (split < seatId.length() && Character.isLetter(seatId.charAt(split))) {
+                split++;
+            }
+            String rowLabel = seatId.substring(0, Math.max(split, 1));
+            String seatNumStr = seatId.substring(Math.max(split, 1));
+            int seatNumber = 0;
+            try {
+                seatNumber = Integer.parseInt(seatNumStr);
+            } catch (NumberFormatException ignored) {
+                // leave seatNumber as 0
+            }
+
+            // Insert seat if missing
+            try (PreparedStatement check = conn.prepareStatement("SELECT seat_id FROM Seats WHERE seat_id = ?")) {
+                check.setString(1, seatId);
+                try (ResultSet rs = check.executeQuery()) {
+                    if (rs.next()) {
+                        continue; // already exists
+                    }
+                }
+            }
+
+            try (PreparedStatement insert = conn.prepareStatement(
+                    "INSERT INTO Seats (seat_id, row_label, seat_number, showroom_id) VALUES (?, ?, ?, ?)")) {
+                insert.setString(1, seatId);
+                insert.setString(2, rowLabel);
+                insert.setInt(3, seatNumber);
+                insert.setString(4, showroomId);
+                insert.executeUpdate();
+            }
+        }
+    }
+
     public Showroom getSeatsForShow(String movieId, String showtime) {
         DatabaseConnectSingleton dcs = DatabaseConnectSingleton.getInstance();
         PreparedStatement pstmt = null;
@@ -125,32 +197,71 @@ public class BookingDBFunctions {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         Integer bookingId = null;
+        lastError = null;
 
         try {
+            // Quick check: verify none of the requested seats are already booked for this showtime
+            if (tickets != null && !tickets.isEmpty()) {
+                StringBuilder placeholders = new StringBuilder();
+                for (int i = 0; i < tickets.size(); i++) {
+                    if (i > 0) placeholders.append(",");
+                    placeholders.append("?");
+                }
+                String dupSql = "SELECT seat_id FROM Tickets WHERE showtime_id = ? AND seat_id IN (" + placeholders + ")";
+                pstmt = dcs.getConn().prepareStatement(dupSql);
+                pstmt.setInt(1, showtimeId);
+                for (int i = 0; i < tickets.size(); i++) {
+                    pstmt.setString(i + 2, tickets.get(i).get("seatId"));
+                }
+                rs = pstmt.executeQuery();
+                List<String> alreadyBooked = new ArrayList<>();
+                while (rs.next()) {
+                    alreadyBooked.add(rs.getString("seat_id"));
+                }
+                rs.close();
+                pstmt.close();
+
+                if (!alreadyBooked.isEmpty()) {
+                    lastError = "Seats already booked: " + String.join(", ", alreadyBooked);
+                    return null;
+                }
+            }
+
             // Start transaction
             dcs.getConn().setAutoCommit(false);
 
-            // Insert into Bookings table and get generated key
-            String bookingSql = "INSERT INTO Bookings (customer_id, status, total_price, promo_id) " +
-                               "VALUES (?, ?, ?, ?)";
-            pstmt = dcs.getConn().prepareStatement(bookingSql, Statement.RETURN_GENERATED_KEYS);
-            pstmt.setString(1, userId);
-            pstmt.setString(2, "Confirmed");
-            pstmt.setDouble(3, totalPrice);
-            pstmt.setString(4, promoId);
+            // Generate booking ID manually to avoid "no default value" issues on some schemas
+            bookingId = getNextBookingId(dcs.getConn());
+            if (bookingId == null) {
+                lastError = "Could not generate booking id";
+                dcs.getConn().rollback();
+                return null;
+            }
+
+            // Insert into Bookings table using explicit booking_id
+            String bookingSql = "INSERT INTO Bookings (booking_id, customer_id, status, total_price, promo_id) " +
+                               "VALUES (?, ?, ?, ?, ?)";
+            pstmt = dcs.getConn().prepareStatement(bookingSql);
+            pstmt.setInt(1, bookingId);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, "Confirmed");
+            pstmt.setDouble(4, totalPrice);
+            pstmt.setString(5, promoId);
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected == 0) {
                 dcs.getConn().rollback();
                 return null;
             }
-            rs = pstmt.getGeneratedKeys();
-            if (rs.next()) {
-                bookingId = rs.getInt(1);
-            } else {
+            pstmt.close();
+
+            // Ensure seat rows exist for this showroom (FK on Tickets -> Seats)
+            String showroomId = getShowroomIdForShowtime(showtimeId, dcs.getConn());
+            if (showroomId == null) {
+                lastError = "Showroom not found for showtime " + showtimeId;
                 dcs.getConn().rollback();
                 return null;
             }
-            pstmt.close();
+            ensureSeatsExist(tickets, showroomId, dcs.getConn());
 
             // Insert tickets
             String ticketSql = "INSERT INTO Tickets (ticket_id, seat_id, showtime_id, booking_id, price, type) " +
@@ -192,6 +303,7 @@ public class BookingDBFunctions {
         } catch (SQLException e) {
             System.err.println("Error creating booking: " + e.getMessage());
             e.printStackTrace();
+            lastError = e.getMessage();
             try {
                 if (dcs.getConn() != null) {
                     dcs.getConn().rollback();
