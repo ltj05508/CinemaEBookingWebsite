@@ -152,11 +152,26 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       setCheckoutError(null);
       router.push(`/movies/${movieId}/confirmation?bookingId=${res.bookingId}`);
     } catch (err: any) {
-      const msg =
-        typeof err?.message === 'string' && err.message.includes('Forbidden')
-          ? 'Please log in to complete checkout.'
-          : 'Unable to complete checkout. Please try again.';
-      setCheckoutError(msg);
+      const rawMessage = typeof err?.message === 'string' ? err.message : '';
+      let friendly = 'Unable to complete checkout. Please try again.';
+
+      // Try to surface backend error details when available
+      try {
+        const parsed = JSON.parse(rawMessage);
+        if (parsed && typeof parsed.message === 'string') {
+          friendly = parsed.message;
+        }
+      } catch {
+        /* not JSON, fall through */
+      }
+
+      if (/forbidden|unauthorized|not authenticated/i.test(rawMessage)) {
+        friendly = 'Please log in to complete checkout.';
+      } else if (!friendly && rawMessage) {
+        friendly = rawMessage;
+      }
+
+      setCheckoutError(friendly);
     }
   };
 
@@ -210,3 +225,4 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
 };
 
 export default CheckoutPage;
+
