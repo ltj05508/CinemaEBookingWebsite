@@ -11,6 +11,8 @@ import {
   getSeats,
   getPrices,
   getCards,
+  addCard,
+  deleteCard,
   postQuote,
   postBooking,
   Ticket,
@@ -50,6 +52,10 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   const [cards, setCards] = useState<{ cardId: string; cardNumber?: string; expirationDate?: string }[]>([]);
   const [selectedCard, setSelectedCard] = useState<string>();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [cardFormVisible, setCardFormVisible] = useState(false);
+  const [cardForm, setCardForm] = useState({ cardNumber: '', expirationDate: '' });
+  const [cardActionError, setCardActionError] = useState<string | null>(null);
+  const [cardActionLoading, setCardActionLoading] = useState(false);
 
   // Hydrate seats passed in query
   useEffect(() => {
@@ -97,6 +103,25 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       }))
     );
   }, [selected]);
+
+  const refreshCards = async () => {
+    try {
+      const cardsResp = await getCards();
+      setCards(cardsResp.cards || []);
+      // Keep current selection if still present; otherwise select first card
+      if (cardsResp.cards?.length) {
+        const stillExists = cardsResp.cards.some((c) => c.cardId === selectedCard);
+        if (!stillExists) {
+          setSelectedCard(cardsResp.cards[0].cardId);
+        }
+      } else {
+        setSelectedCard(undefined);
+      }
+    } catch (e: any) {
+      console.error('Failed to refresh cards', e);
+      setCardActionError('Unable to load payment methods. Please sign in again.');
+    }
+  };
 
   // Quote pricing
   useEffect(() => {
@@ -175,28 +200,72 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
     }
   };
 
+  const submitNewCard = async () => {
+    setCardActionError(null);
+    if (!cardForm.cardNumber.trim() || !cardForm.expirationDate.trim()) {
+      setCardActionError('Card number and expiration date are required');
+      return;
+    }
+    setCardActionLoading(true);
+    try {
+      const res = await addCard({
+        cardNumber: cardForm.cardNumber.trim(),
+        expirationDate: cardForm.expirationDate.trim(),
+      });
+      setCardForm({ cardNumber: '', expirationDate: '' });
+      setCardFormVisible(false);
+      await refreshCards();
+      if (res?.cardId) setSelectedCard(res.cardId);
+    } catch (err: any) {
+      const msg = typeof err?.message === 'string' ? err.message : 'Unable to add card.';
+      setCardActionError(msg);
+    } finally {
+      setCardActionLoading(false);
+    }
+  };
+
+  const removeCard = async (cardId: string) => {
+    setCardActionError(null);
+    setCardActionLoading(true);
+    try {
+      await deleteCard(cardId);
+      await refreshCards();
+    } catch (err: any) {
+      const msg = typeof err?.message === 'string' ? err.message : 'Unable to remove card.';
+      setCardActionError(msg);
+    } finally {
+      setCardActionLoading(false);
+    }
+  };
+
   const seatIds = useMemo(() => Array.from(selected), [selected]);
 
-  return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Checkout</h1>
+  useEffect(() => {
+    if (!selectedCard && cards.length) {
+      setSelectedCard(cards[0].cardId);
+    }
+  }, [cards, selectedCard]);
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Select Seats</h2>
+  return (
+    <div className="max-w-5xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
+
+      <section className="space-y-3 rounded-xl border bg-white shadow-sm p-4">
+        <h2 className="font-semibold text-gray-900">Select Seats</h2>
         {showroom && (
           <SeatMap rows={showroom.numOfRows} cols={showroom.numOfCols} booked={booked} selected={selected} onToggle={toggleSeat} />
         )}
       </section>
 
       {prices && !!seatIds.length && (
-        <section className="space-y-3">
-          <h2 className="font-semibold">Ticket Types</h2>
+        <section className="space-y-3 rounded-xl border bg-white shadow-sm p-4">
+          <h2 className="font-semibold text-gray-900">Ticket Types</h2>
           <TicketTypeSelector seatIds={seatIds} prices={prices} value={tickets} onChange={setTickets} />
         </section>
       )}
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Order Summary</h2>
+      <section className="space-y-3 rounded-xl border bg-white shadow-sm p-4">
+        <h2 className="font-semibold text-gray-900">Order Summary</h2>
         <OrderSummary
           subtotal={quote.subtotal}
           discount={quote.discount}
@@ -207,13 +276,70 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
         />
       </section>
 
-      <section className="space-y-3">
-        <h2 className="font-semibold">Payment</h2>
-        <PaymentMethodList cards={cards} selectedCardId={selectedCard} onSelect={setSelectedCard} onAdd={() => alert('Navigate to add card')} />
+      <section className="space-y-3 rounded-xl border bg-white shadow-sm p-4">
+        <h2 className="font-semibold text-gray-900">Payment</h2>
+        <div className="space-y-2">
+          <PaymentMethodList
+            cards={cards}
+            selectedCardId={selectedCard}
+            onSelect={setSelectedCard}
+            onAdd={() => setCardFormVisible((v) => !v)}
+            onDelete={cards.length > 1 ? removeCard : undefined}
+          />
+          {cardActionError && <p className="text-sm text-red-600">{cardActionError}</p>}
+          {cardFormVisible && (
+            <div className="p-3 border rounded space-y-2 bg-gray-50">
+              <div className="text-sm font-semibold text-gray-900">Add payment card</div>
+              <div className="grid gap-2 md:grid-cols-2">
+                <label className="text-sm space-y-1">
+                  <span className="block text-gray-900">Card number</span>
+                  <input
+                    type="text"
+                    value={cardForm.cardNumber}
+                    onChange={(e) => setCardForm((f) => ({ ...f, cardNumber: e.target.value }))}
+                    className="w-full rounded border px-3 py-2 text-gray-900"
+                    placeholder="4111111111111111"
+                  />
+                </label>
+                <label className="text-sm space-y-1">
+                  <span className="block text-gray-900">Expiration (YYYY-MM-DD)</span>
+                  <input
+                    type="text"
+                    value={cardForm.expirationDate}
+                    onChange={(e) => setCardForm((f) => ({ ...f, expirationDate: e.target.value }))}
+                    className="w-full rounded border px-3 py-2 text-gray-900"
+                    placeholder="2025-12-31"
+                  />
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
+                  onClick={submitNewCard}
+                  disabled={cardActionLoading}
+                >
+                  {cardActionLoading ? 'Saving...' : 'Save card'}
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded border"
+                  onClick={() => {
+                    setCardFormVisible(false);
+                    setCardActionError(null);
+                  }}
+                  disabled={cardActionLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <button
-        className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
+        className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50 shadow-sm"
         disabled={!selected.size || !tickets.length || !selectedCard}
         onClick={onCheckout}
       >
@@ -225,4 +351,5 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
 };
 
 export default CheckoutPage;
+
 
