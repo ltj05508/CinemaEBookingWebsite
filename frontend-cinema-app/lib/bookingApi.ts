@@ -62,3 +62,14 @@ export const getCards = () =>
 
 export const getBooking = (bookingId: number) =>
   jsonFetch<{ booking: any }>(`${API_BASE}/api/booking/${bookingId}`);
+
+export const addCard = (body: { cardNumber: string; expirationDate: string; billingAddressId?: string }) =>
+  jsonFetch<{ cardId: string }>(`${API_BASE}/api/profile/cards`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+export const deleteCard = (cardId: string) =>
+  jsonFetch<{ success: boolean }>(`${API_BASE}/api/profile/cards/${cardId}`, {
+    method: 'DELETE',
+  });
