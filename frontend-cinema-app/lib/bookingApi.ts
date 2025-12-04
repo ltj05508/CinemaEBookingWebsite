@@ -66,21 +66,17 @@ export const postQuote = (body: {
       body: JSON.stringify(body),
     });
   
-    console.log('Response status:', response.status); // log status code
-    console.log('Response message:', response.text());
-  
-    let responseBody;
-    try {
-      responseBody = await response.json();
-      console.log('Response JSON:', responseBody);
-    } catch (err) {
-      console.log('Failed to parse JSON response:', await response.text());
-    }
+    console.log('Response status:', response.status);
   
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`Request failed with status ${response.status}: ${errorText}`);
     }
   
+    const responseBody = await response.json();
+    console.log('Response JSON:', responseBody);
+    
     return responseBody;
   };
   

@@ -159,13 +159,14 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   useEffect(() => {
     const run = async () => {
       if (!tickets.length || !prices) return;
-      const clientQuote = () => {
+      
+      if (!showtimeId) {
+        // No showtime, calculate client-side only
         const subtotal = tickets.reduce((sum, t) => sum + (prices[t.type] || prices.adult), 0);
-        return { subtotal, discount: 0, total: subtotal };
-      };
-      setQuote(clientQuote());
-
-      if (!showtimeId) return;
+        setQuote({ subtotal, discount: 0, total: subtotal });
+        return;
+      }
+      
       try {
         const res = await postQuote({
           movieId: Number(movieId),
@@ -175,7 +176,6 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
         });
         console.log(res);
         console.log("Fetched quote", res.quote);
-        //setQuote(res.quote);
         setQuote({
           subtotal: res.quote.subtotal,
           discount: res.quote.discount,
@@ -186,11 +186,11 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
         err?.response?.data?.message ||
         err?.message ||
         "Failed to fetch quote";
-
-        setQuote((prev) => ({
-          ...prev,
-          error: message       
-        }));
+        
+        // On error, fall back to client calculation
+        const subtotal = tickets.reduce((sum, t) => sum + (prices[t.type] || prices.adult), 0);
+        setQuote({ subtotal, discount: 0, total: subtotal });
+        console.error("Quote error:", message);
       }
     };
     run();
