@@ -6,6 +6,7 @@ import { PaymentMethodList } from '@/components/PaymentMethodList';
 import { OrderSummary } from '@/components/OrderSummary';
 import { TicketTypeSelector } from '@/components/TicketTypeSelector';
 import { SeatMap } from '@/components/SeatMap';
+import { getAuthStatus } from "@/lib/authClient";
 import {
   getAvailability,
   getSeats,
@@ -56,6 +57,35 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   const [cardForm, setCardForm] = useState({ cardNumber: '', expirationDate: '' });
   const [cardActionError, setCardActionError] = useState<string | null>(null);
   const [cardActionLoading, setCardActionLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<string | undefined>(undefined);
+
+  /*
+  //Set value of isLoggedIn
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const loggedIn = await getAuthStatus();
+        setIsLoggedIn(loggedIn);
+      } catch (e) {
+        setIsLoggedIn(false);
+      }
+    };
+    check();
+  }, []);
+  */
+
+
+
+  useEffect(() => {
+    (async () => {
+        const status = await getAuthStatus();
+        setIsLoggedIn(status);
+        const role = String(status?.user?.role ?? "").toLowerCase();
+        if (!status?.loggedIn) router.replace(`/login?redirect=${encodeURIComponent("/admin/movies/new")}`);
+        //if (role !== "admin") router.replace("/account");
+    })();
+  }, []);
 
   // Hydrate seats passed in query
   useEffect(() => {
@@ -69,6 +99,8 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
     (async () => {
       let availabilityResp: any = { bookedSeats: [] };
       let seatsResp: any = null;
+
+      //const isLoggedIn = await getAuthStatus();
 
       if (showtimeDisplay) {
         availabilityResp = await getAvailability(movieId, showtimeDisplay).catch(() => ({ bookedSeats: [] }));
@@ -139,15 +171,30 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
           movieId: Number(movieId),
           showtimeId,
           tickets,
-          promoCode: promo || undefined,
+          promoCode: appliedPromo || undefined,
         });
-        setQuote(res.quote);
-      } catch {
-        // stay on client quote
+        console.log(res);
+        console.log("Fetched quote", res.quote);
+        //setQuote(res.quote);
+        setQuote({
+          subtotal: res.quote.subtotal,
+          discount: res.quote.discount,
+          total: res.quote.total,
+        });
+      } catch (err: any) {
+        const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to fetch quote";
+
+        setQuote((prev) => ({
+          ...prev,
+          error: message       
+        }));
       }
     };
     run();
-  }, [tickets, promo, prices, showtimeId, movieId]);
+  }, [tickets, appliedPromo, prices, showtimeId, movieId]);
 
   const toggleSeat = (seatId: string) => {
     setSelected((prev) => {
@@ -272,20 +319,33 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
           total={quote.total}
           promoCode={promo}
           onPromoChange={setPromo}
-          onApplyPromo={() => null}
+          //onApplyPromo={() => setAppliedPromo(promo)}
+          onApplyPromo={() => {
+            const trimmed = promo.trim();
+            if (!trimmed) {
+              alert("Please enter a promo code");
+              return;
+            }
+            setAppliedPromo(trimmed);
+          }}
         />
       </section>
 
       <section className="space-y-3 rounded-xl border bg-white shadow-sm p-4">
-        <h2 className="font-semibold text-gray-900">Payment</h2>
+        {isLoggedIn && <h2 className="font-semibold text-gray-900">Payment</h2>}
         <div className="space-y-2">
           <PaymentMethodList
             cards={cards}
             selectedCardId={selectedCard}
             onSelect={setSelectedCard}
-            onAdd={() => setCardFormVisible((v) => !v)}
+            onAdd={isLoggedIn ? () => setCardFormVisible((v) => !v) : undefined}
             onDelete={cards.length > 1 ? removeCard : undefined}
           />
+          {!isLoggedIn && (
+          <p className="text-sm text-gray-500">
+            Please log in to add a payment method.{isLoggedIn}
+          </p>
+          )}
           {cardActionError && <p className="text-sm text-red-600">{cardActionError}</p>}
           {cardFormVisible && (
             <div className="p-3 border rounded space-y-2 bg-gray-50">

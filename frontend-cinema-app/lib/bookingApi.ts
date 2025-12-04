@@ -28,6 +28,7 @@ export const getPrices = () =>
     `${API_BASE}/api/auth/prices`
   );
 
+  /*
 export const postQuote = (body: {
   movieId: number;
   showtimeId: number;
@@ -38,9 +39,52 @@ export const postQuote = (body: {
     `${API_BASE}/api/booking/quote`,
     {
       method: 'POST',
+      credentials: "include",
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     }
   );
+  */
+
+  export const postQuote = async (body: {
+    movieId: number;
+    showtimeId: number;
+    tickets: Ticket[];
+    promoCode?: string;
+  }) => {
+    console.log('Sending request body:', body);
+    console.log('Stringified body:', JSON.stringify(body));
+  
+    const response = await fetch(`${API_BASE}/api/booking/quote`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  
+    console.log('Response status:', response.status); // log status code
+    console.log('Response message:', response.text());
+  
+    let responseBody;
+    try {
+      responseBody = await response.json();
+      console.log('Response JSON:', responseBody);
+    } catch (err) {
+      console.log('Failed to parse JSON response:', await response.text());
+    }
+  
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+  
+    return responseBody;
+  };
+  
+  
 
 export const postBooking = (body: {
   movieId: number;
