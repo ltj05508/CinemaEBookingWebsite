@@ -257,6 +257,12 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       setCardActionError('Card number and expiration date are required');
       return;
     }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cardForm.expirationDate.trim())) {
+      setCardActionError('Expiration date must be in the YYYY-MM-DD format');
+      return;
+    }
+
     setCardActionLoading(true);
     try {
       const res = await addCard({
