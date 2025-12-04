@@ -139,7 +139,7 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
           Back to Movie
         </Link>
         <Link
-          href="/account"
+          href="/orders"
           className="px-4 py-2 rounded-lg bg-black text-white hover:bg-gray-800"
         >
           View Order History

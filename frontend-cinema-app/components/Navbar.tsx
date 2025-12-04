@@ -402,7 +402,7 @@ export default function Navbar() {
   const isLoadingInitial = auth === null;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
+    <header className="sticky top-0 z-50 bg-[#BA0C2F] backdrop-blur border-b">
       <nav className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-semibold text-lg">
           🎬 CineBook
@@ -428,9 +428,6 @@ export default function Navbar() {
               <Link href="/account" className="hover:underline">
                 Profile
               </Link>
-              <Link href="/orders" className="hover:underline">
-                Orders
-              </Link>
               <button
                 onClick={onLogout}
                 disabled={busy}
@@ -449,7 +446,5 @@ export default function Navbar() {
     </header>
   );
 }
-
-
 
 
