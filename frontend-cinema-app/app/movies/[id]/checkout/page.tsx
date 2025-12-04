@@ -48,7 +48,8 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [prices, setPrices] = useState<Record<'adult' | 'child' | 'senior', number> | null>(null);
   const [quote, setQuote] = useState({ subtotal: 0, discount: 0, total: 0 });
-  const [promo, setPromo] = useState('');
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState('');
   const [cards, setCards] = useState<{ cardId: string; cardNumber?: string; expirationDate?: string }[]>([]);
   const [selectedCard, setSelectedCard] = useState<string>();
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -139,7 +140,7 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
           movieId: Number(movieId),
           showtimeId,
           tickets,
-          promoCode: promo || undefined,
+          promoCode: appliedPromo || undefined,
         });
         setQuote(res.quote);
       } catch {
@@ -147,7 +148,7 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       }
     };
     run();
-  }, [tickets, promo, prices, showtimeId, movieId]);
+  }, [tickets, appliedPromo, prices, showtimeId, movieId]);
 
   const toggleSeat = (seatId: string) => {
     setSelected((prev) => {
@@ -155,6 +156,10 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       next.has(seatId) ? next.delete(seatId) : next.add(seatId);
       return next;
     });
+  };
+
+  const handleApplyPromo = () => {
+    setAppliedPromo(promoInput.trim());
   };
 
   const onCheckout = async () => {
@@ -171,7 +176,7 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
         movieId: Number(movieId),
         showtimeId,
         tickets,
-        promoCode: promo || undefined,
+        promoCode: appliedPromo || undefined,
         cardId: selectedCard,
       });
       setCheckoutError(null);
@@ -270,9 +275,9 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
           subtotal={quote.subtotal}
           discount={quote.discount}
           total={quote.total}
-          promoCode={promo}
-          onPromoChange={setPromo}
-          onApplyPromo={() => null}
+          promoCode={promoInput}
+          onPromoChange={setPromoInput}
+          onApplyPromo={handleApplyPromo}
         />
       </section>
 
