@@ -8,11 +8,13 @@ import { getAuthStatus } from '@/lib/authClient';
 type Booking = {
   bookingId: number;
   bookingDate: string;
-  movieTitle: string;
-  showtime: string;
-  seats: string[];
+  movieTitle?: string;
+  showtime?: string;
+  seats?: string[];
+  ticketCount?: number;
   totalPrice: number;
   status: string;
+  promoId?: string;
 };
 
 export default function OrderHistoryPage() {
@@ -114,7 +116,7 @@ export default function OrderHistoryPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-xl font-semibold text-gray-900">
-                      {booking.movieTitle}
+                      {booking.movieTitle || `Booking #${booking.bookingId}`}
                     </h2>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       booking.status === 'confirmed' || booking.status === 'active'
@@ -128,15 +130,24 @@ export default function OrderHistoryPage() {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                    <div>
-                      <span className="font-medium">Showtime:</span> {booking.showtime}
-                    </div>
+                    {booking.showtime && (
+                      <div>
+                        <span className="font-medium">Showtime:</span> {booking.showtime}
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium">Booked:</span> {formatDate(booking.bookingDate)}
                     </div>
-                    <div>
-                      <span className="font-medium">Seats:</span> {booking.seats.join(', ')}
-                    </div>
+                    {booking.seats && booking.seats.length > 0 && (
+                      <div>
+                        <span className="font-medium">Seats:</span> {booking.seats.join(', ')}
+                      </div>
+                    )}
+                    {booking.ticketCount && (
+                      <div>
+                        <span className="font-medium">Tickets:</span> {booking.ticketCount}
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium">Total:</span> ${booking.totalPrice.toFixed(2)}
                     </div>
