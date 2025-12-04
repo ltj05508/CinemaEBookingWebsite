@@ -158,7 +158,12 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   // Quote pricing
   useEffect(() => {
     const run = async () => {
-      if (!tickets.length || !prices) return;
+      if (!tickets.length) {
+        setQuote({ subtotal: 0, discount: 0, total: 0 });
+        return;
+      }
+  
+      if (!prices) return;
       
       if (!showtimeId) {
         // No showtime, calculate client-side only
