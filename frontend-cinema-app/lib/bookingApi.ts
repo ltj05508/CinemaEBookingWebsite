@@ -125,4 +125,4 @@ export const getOrderHistory = () =>
       totalPrice: number;
       status: string;
     }> 
-  }>(`${API_BASE}/api/profile/bookings`);
+  }>(`${API_BASE}/api/booking/history`);

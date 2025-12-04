@@ -414,9 +414,9 @@ public class BookingAPIController {
 
     /**
      * Get order history for the logged-in user.
-     * GET /api/profile/bookings
+     * GET /api/booking/history
      */
-    @GetMapping("/api/profile/bookings")
+    @GetMapping("/history")
     public ResponseEntity<Map<String, Object>> getOrderHistory(HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         
