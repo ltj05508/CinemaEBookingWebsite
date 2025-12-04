@@ -81,7 +81,14 @@ export default function ConfirmationPage({ params }: { params?: Promise<Params> 
           <div className="flex justify-between pb-3 border-b">
             <span className="text-gray-600">Booking Date</span>
             <span className="font-semibold">
-              {booking.bookingDate ? new Date(booking.bookingDate).toLocaleString() : '—'}
+              {booking.bookingDate ? new Date(booking.bookingDate).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              }) : '—'}
             </span>
           </div>
           

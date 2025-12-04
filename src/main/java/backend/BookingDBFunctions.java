@@ -352,7 +352,19 @@ public class BookingDBFunctions {
 
             Map<String, Object> booking = new HashMap<>();
             booking.put("bookingId", rs.getInt("booking_id"));
-            booking.put("bookingDate", rs.getTimestamp("booking_date"));
+            
+            // Get timestamp as local time and format for JavaScript
+            // Use Calendar to read timestamp in local timezone, not UTC
+            java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getDefault());
+            java.sql.Timestamp timestamp = rs.getTimestamp("booking_date", cal);
+            if (timestamp != null) {
+                // Format as ISO string with timezone offset (e.g., 2025-12-04T11:15:30-05:00)
+                java.time.ZonedDateTime zdt = timestamp.toLocalDateTime().atZone(java.time.ZoneId.systemDefault());
+                booking.put("bookingDate", zdt.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            } else {
+                booking.put("bookingDate", null);
+            }
+            
             booking.put("status", rs.getString("status"));
             booking.put("totalPrice", rs.getDouble("total_price"));
             booking.put("customerId", rs.getString("customer_id"));
