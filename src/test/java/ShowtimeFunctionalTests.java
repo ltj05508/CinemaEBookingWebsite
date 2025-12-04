@@ -1,4 +1,4 @@
-import backend.hey UserDBFunctions;
+import backend.UserDBFunctions;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
