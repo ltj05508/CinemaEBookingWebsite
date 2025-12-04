@@ -428,6 +428,9 @@ export default function Navbar() {
               <Link href="/account" className="hover:underline">
                 Profile
               </Link>
+              <Link href="/orders" className="hover:underline">
+                Orders
+              </Link>
               <button
                 onClick={onLogout}
                 disabled={busy}
@@ -446,5 +449,7 @@ export default function Navbar() {
     </header>
   );
 }
+
+
 
 

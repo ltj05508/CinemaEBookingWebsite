@@ -113,3 +113,16 @@ export const deleteCard = (cardId: string) =>
   jsonFetch<{ success: boolean }>(`${API_BASE}/api/profile/cards/${cardId}`, {
     method: 'DELETE',
   });
+
+export const getOrderHistory = () =>
+  jsonFetch<{ 
+    bookings: Array<{
+      bookingId: number;
+      bookingDate: string;
+      movieTitle: string;
+      showtime: string;
+      seats: string[];
+      totalPrice: number;
+      status: string;
+    }> 
+  }>(`${API_BASE}/api/profile/bookings`);
