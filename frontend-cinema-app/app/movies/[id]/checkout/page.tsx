@@ -59,7 +59,6 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   const [cardActionError, setCardActionError] = useState<string | null>(null);
   const [cardActionLoading, setCardActionLoading] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [appliedPromo, setAppliedPromo] = useState<string | undefined>(undefined);
 
   /*
   //Set value of isLoggedIn
@@ -322,9 +321,9 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
           subtotal={quote.subtotal}
           discount={quote.discount}
           total={quote.total}
-          promoCode={promo}
-          onPromoChange={setPromo}
-          onApplyPromo={() => null}
+          promoCode={promoInput}
+          onPromoChange={setPromoInput}
+          onApplyPromo={handleApplyPromo}
         />
       </section>
 
