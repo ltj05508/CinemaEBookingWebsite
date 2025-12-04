@@ -158,7 +158,12 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
   // Quote pricing
   useEffect(() => {
     const run = async () => {
-      if (!tickets.length || !prices) return;
+      if (!tickets.length) {
+        setQuote({ subtotal: 0, discount: 0, total: 0 });
+        return;
+      }
+  
+      if (!prices) return;
       
       if (!showtimeId) {
         // No showtime, calculate client-side only
@@ -257,6 +262,12 @@ const CheckoutPage: React.FC<Props> = ({ params }) => {
       setCardActionError('Card number and expiration date are required');
       return;
     }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cardForm.expirationDate.trim())) {
+      setCardActionError('Expiration date must be in the YYYY-MM-DD format');
+      return;
+    }
+
     setCardActionLoading(true);
     try {
       const res = await addCard({
